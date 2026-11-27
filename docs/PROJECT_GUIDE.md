@@ -40,11 +40,15 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   to excess power above the line: slope sensitivity of TBR 0.68–1.04 → 0.01–0.03 (ADR-008).
 
 - P4a: the reference is split by preset as well as condition (muse4 alpha_exc is 4.6× frontal8 eyes-open, 6.6× eyes-closed). ln(tbr_osc) hit −inf on 6 recordings with
-  no theta rhythm → ln(1+x). Features still skewed after transform use a percentile z (ADR-010).
+  no theta rhythm → ln(1+x). Features still skewed after transform use a percentile z (ADR-010). The first out-of-range rule jumped
+  2.05 → 3.85 at the reference max → replaced by a continuous extension. Reference recordings now need ≥ 6 clean epochs.
+- P4b: score() needs the preset too (ADR-011). Review caught a composite of 100 built from signal quality alone → now None.
 
 ## 6. Current results
 - Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings
-  skipped for 0 clean epochs (S009 everywhere; 5 more frontal8 eyes-open).
+  skipped for 0 clean epochs at first; with the ≥ 6-epoch rule 27 of 200 (frontal8 eyes-open 10/50).
+- Score (P4b), held-out S060, frontal8: eyes-open run vs eyes-open reference 86.3 (confidence 0.93); eyes-closed run 84.1 vs eyes-open,
+  89.4 vs eyes-closed. muse4: 84.2 / 83.7 / 86.5. Full breakdown in DEVLOG 2026-11-27 21:26.
 
 ## 7. Limitations
 - Reference = 50 healthy US adults from one public dataset; typicality is relative to them only.

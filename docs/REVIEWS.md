@@ -80,3 +80,19 @@ Tried to break: comparison with hand-computed mid-ranks and Φ⁻¹; caps both s
 
 ## P4a phase PR review (499c293..HEAD) — 2026-11-27 — PASS
 Diff: config (+3 constants), reference.py, build_reference.py, tests, models/. Contract change load_reference(condition, preset) recorded in ADR-010. No scoring code yet (P4b). Author check: owner only.
+
+## src/reference.py rev 2 + scripts/build_reference.py inclusion — 2026-11-27 — PASS
+Tried to break: z at min/max ± 1e-9; monotonicity over a 400-point grid past both edges; cap both signs; rebuilt reference method flips.
+Checked: 12 reference tests; worked example rev 1 → rev 2; 2 method changes listed in ADR-010. Remaining: rank step inside the range (~0.17 z at n = 49).
+
+## src/scoring.py — 2026-11-27 — FIXED → PASS
+Tried to break: None feature value; all EEG features NaN; whole dimension NaN; missing duration; fooof_r2 NaN; extreme values (paf 30 Hz,
+alpha 1e6 µV², r2 0.1); bad condition/preset; 0 epochs from 500 µV noise.
+Checked: 17 tests; S060 8-row breakdown (DEVLOG 21:26).
+Found: (1) None → TypeError in to_z; (2) composite 100 with no EEG feature. Fixed before commit (b825445) + regression tests (7cbe9e3).
+Unused loggers → used (fb264e3). Remaining: EO/EC separation by the composite is small (0.5–2.2 points on S060).
+
+## P4 phase PR review (499c293..fb264e3) — 2026-11-27 — PASS
+Diff: 16 files, +2027. Contracts changed: load_reference(condition, preset) (ADR-010), score(…, preset) (ADR-011), CLAUDE.md §6 synced.
+Checked: no prints in src/, no absolute paths, all constants in config, holdout/demo leak guard raises under -O, suite 72 passed.
+Author check: owner only. Remaining for P5/P7: callers must pass preset and qc["duration_s"].

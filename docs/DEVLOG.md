@@ -177,3 +177,30 @@ Methods: frontal8 EC hibeta_exc skew 1.43 → 0.76, percentile → zscore (the t
 muse4 EC hibeta_exc 0.96 → 1.02, zscore → percentile (borderline). Percentile cells still 5 of 28.
 Sanity: EO PAF mean 9.65 → 9.69 Hz (frontal8), 10.42 → 10.42 (muse4); alpha_exc EO→EC 1.41→3.93 (frontal8), 7.55→29.79 µV² (muse4).
 Files: scripts/build_reference.py, models/reference.json, models/reference_features.csv
+
+### 2026-11-27 21:26 — P4b scoring  (commits b825445, 7cbe9e3, fb264e3)
+Type: feature
+Change: src/scoring.py per §7.6 with ADR-011 (preset argument, duration from qc, missing-dimension renormalisation).
+Why: the single score with breakdown judges must see.
+Effect on calculations: first composite. S060 (held out), both runs, both references, both presets:
+| preset | run | ref | composite | conf | attention | relaxation | load | signal q. | z alpha_exc |
+|---|---|---|---|---|---|---|---|---|---|
+| frontal8 | R01 (EO) | EO | **86.3** | 0.93 | 87.3 | 80.6 | 89.6 | 89.9 | 1.38 |
+| frontal8 | R01 (EO) | EC | 88.9 | 0.93 | 90.7 | 90.6 | 84.3 | 89.9 | 0.28 |
+| frontal8 | R02 (EC) | EO | **84.1** | 0.97 | 90.1 | 64.3 | 93.8 | 95.3 | 4.06 |
+| frontal8 | R02 (EC) | EC | **89.4** | 0.97 | 96.7 | 79.4 | 89.1 | 95.3 | 2.24 |
+| muse4 | R01 (EO) | EO | **84.2** | 0.83 | 91.3 | 78.6 | 89.0 | 72.9 | 1.17 |
+| muse4 | R01 (EO) | EC | 84.1 | 0.83 | 84.8 | 86.6 | 87.1 | 72.9 | 0.02 |
+| muse4 | R02 (EC) | EO | **83.7** | 0.81 | 97.2 | 69.9 | 87.0 | 79.2 | 3.30 |
+| muse4 | R02 (EC) | EC | **86.5** | 0.81 | 98.9 | 78.4 | 85.8 | 79.2 | 1.94 |
+
+Sanity: R01 vs EO > R02 vs EO — PASS both (margins 2.2 and 0.5 points); R02 vs EC > R02 vs EO — PASS both (5.3, 2.8).
+Read: the eyes-open/closed contrast is carried almost entirely by alpha_exc (z 4.06 / 3.30 for R02 vs EO); other features are near-typical
+in both runs, and averaging dilutes the contrast. Not tuned toward the expected result.
+Review bugs (fixed before commit): None feature value crashed to_z (TypeError); all EEG features NaN gave composite 100 from signal quality alone.
+Files: src/scoring.py, tests/test_scoring.py, docs/DECISIONS.md
+
+### 2026-11-27 21:30 — P4 retro
+Went well: every rule change (continuous z, n_kept ≥ 6) was measured before → after on the full reference, and both sanity directions hold.
+Broke: two scoring edge cases (None value, signal-quality-only composite) — caught by adversarial probes, regression-tested.
+Next: the composite separates EO from EC weakly (0.5–2.2 points on S060); sensitivity analysis (P6) should show how weights move this.

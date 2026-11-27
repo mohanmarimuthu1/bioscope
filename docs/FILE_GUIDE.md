@@ -144,6 +144,7 @@ mid-rank 1-based; outside, the parametric z if larger in magnitude; |z| ≤ 4.
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-27 | ed0a2e4 | Created | 5/28 cells percentile |
+| 2026-11-27 | 35511fb | Percentile z: continuous linear extension outside range (ADR-010 rev 2) | max+ε 3.85 → 2.05 (frontal8 EC hibeta_exc) |
 
 ## scripts/build_reference.py
 **Purpose:** build models/reference.json + models/reference_features.csv from S001–S050 R01/R02.
@@ -154,6 +155,7 @@ mid-rank 1-based; outside, the parametric z if larger in magnitude; |z| ≤ 4.
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-27 | ed0a2e4 | Created | first reference |
+| 2026-11-27 | db70e0b | Inclusion requires n_kept ≥ 6 | used EO/EC frontal8 44/49 → 40/42, muse4 47/48 → 44/47 |
 
 ## tests/test_reference.py
 10 tests: transforms at 0, mid-rank percentile, outside-range rule and cap, NaN input, leak guard, built json (4 cells, no leak, percentile ⇔ values), load_reference + sanity.
@@ -167,3 +169,25 @@ top level: build_date, command, runs, candidate and excluded subjects, settings.
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-27 | 7d588c9 | Created | see DEVLOG 21:10 |
+
+## src/scoring.py
+**Purpose:** one session → 0–100 typicality score that decomposes into dimensions, features and z (§7.6, ADR-011).
+**Inputs → outputs:** `score(features, qc, condition, preset)`; qc must carry `duration_s` → dict with composite, confidence, dimensions,
+feature_z, feature_scores, named_metrics, explanations, warnings (+ condition, preset).
+**Algorithm:** z per feature from `reference.to_z` → s = clip(100 − 15·|z|, 0, 100) → dimension = mean of its feature scores →
+signal_quality = 100·(0.5·retained + 0.5·r2n) → composite = weighted sum (0.30/0.30/0.25/0.15, renormalised if a dimension is missing) →
+confidence = 0.5·retained + 0.3·r2n + 0.2·min(duration/60, 1). Explanations for |z| ≥ 1, largest first.
+**Edge cases:** tbr_osc NaN → Attention from PAF + warning; a missing feature → its dimension uses the rest; whole dimension missing →
+renormalise + warning; no EEG dimension → composite None; 0 epochs → composite None, confidence 0; None values treated as missing.
+**Key parameters:** Z_PENALTY 15 (one SD costs 15 points; |z| ≥ 6.7 → 0), WEIGHTS, EXPLAIN_Z_THRESHOLD 1.
+**Connects to:** reference.py (z), features.py/preprocess.py (inputs), db.py + pages (P5/P7).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | b825445 | Created | S060 R01 vs EO 86.3 (frontal8) |
+
+## tests/test_scoring.py
+17 tests: weights sum, typical session ≈ 100 for all 4 cells, bounds on extreme values, NaN TBR, missing feature, missing dimension,
+missing duration, bad args, 0 epochs end-to-end, sample file, S060 R01 > R02 vs EO (both presets), None value, all-EEG-missing.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 7cbe9e3 | Created | suite 72 passed |

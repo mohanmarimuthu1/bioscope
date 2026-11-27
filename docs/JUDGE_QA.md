@@ -53,6 +53,14 @@ frontal8 eyes-open uses 44 recordings, eyes-closed 49; muse4 47 and 48. Recordin
 A: We measured it. Power features are log-transformed first (ln(1+x), since some are exactly 0); hibeta_exc skew 6.30 → 1.43.
 Any feature still skewed past |1| (5 of 28) is ranked against the reference instead (percentile → z), capped at |z| = 4 (ADR-010).
 
+**Q: What does a score of 72 mean?**
+A: That the recording is moderately typical of people recorded the same way. Each feature loses 15 points per standard deviation from the
+reference, dimensions average their features, and the composite weights them 0.30/0.30/0.25/0.15. S060's own eyes-open run scores 86.3
+against the eyes-open reference; its eyes-closed run scores 84.1 against eyes-open but 89.4 against eyes-closed. It is not a health grade.
+
+**Q: Why not train on "healthy vs unhealthy" labels?**
+A: The public resting data has no such labels, and inventing them would be fake. Typicality against a matched reference is what the data supports.
+
 ## Limitations
 **Q: Why is 4-channel less reliable?**
 A: (1) Blink removal is coarser: 3 ICA components instead of 7, and the blink reference (AF7/AF8) is half of the montage, so one component
