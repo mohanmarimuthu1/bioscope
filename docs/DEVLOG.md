@@ -28,6 +28,15 @@ Change: `scripts/download_data.py`, idempotent with retries.  Why: reproducible 
 Effect on calculations: none. Data in place: 100 reference + 14 demo EDF = 114 files, 153.3 MB. Rerun skipped all 114.
 Files: scripts/download_data.py
 
+### 2026-11-27 20:30 — BUG-001: pre-commit trailer guard did not block  (commit: this docs fix)
+Type: bugfix (BUG-001) — process, not calculation
+Symptom: guard printed STOP on the docs commit, but the chained command still committed and pushed.
+Root cause: (1) the guard only printed STOP instead of aborting; (2) REVIEWS.md text quoting the guard's own search word made it match (false positive — no commit message contains a trailer; verified with `git log --format=%B | grep`).
+Fix: REVIEWS wording changed to "AI-trailer grep"; guard now `throw`s before `git commit` so a match stops the commit, and scans only added (`+`) diff lines so deleting bad text is not itself blocked.
+Test: guard blocked the first attempt of this fix (matched the removed line) → proved it now aborts; with added-lines filter → clean.
+Before → After: guard matches on HEAD content 1 → 0.
+Files: docs/REVIEWS.md, docs/DEVLOG.md
+
 ### 2026-11-27 20:25 — P0 retro
 Type: retro
 Went well: env built entirely on E: (Python 3.11 via uv, no C: growth); FOOOF verified on numpy 2.4 before any feature code.

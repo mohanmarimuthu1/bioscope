@@ -19,5 +19,5 @@ Found: no checksum verification against PhysioNet SHA256SUMS. Remaining: accepte
 
 ## PR review — P0 Setup (0aa60dc..docs commit) — 2026-11-27 — PASS
 Tried to break: tooling/junk files in history, absolute paths, stray prints in src/, author identity, AI trailers.
-Checked: 5 committed files only (.gitignore, requirements.txt, src/__init__.py, src/config.py, scripts/download_data.py) + docs/; no absolute paths or prints in src/; all commits "Mohankumar M"; `Co-Authored` grep empty; CLAUDE.md, plan.md, .claude/, .claude-flow/, .venv/, data/raw/ all ignored.
+Checked: 5 committed files only (.gitignore, requirements.txt, src/__init__.py, src/config.py, scripts/download_data.py) + docs/; no absolute paths or prints in src/; all commits "Mohankumar M"; AI-trailer grep empty; CLAUDE.md, plan.md, .claude/, .claude-flow/, .venv/, data/raw/ all ignored.
 Found: none blocking. Remaining: download checksum (accepted, above).
