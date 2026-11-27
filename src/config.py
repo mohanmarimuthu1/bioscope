@@ -80,7 +80,7 @@ FOOOF_SETTINGS = {
     "aperiodic_mode": "fixed",            # no knee; adequate for 1–40 Hz scalp EEG (design choice)
 }
 FOOOF_FREQ_RANGE = [1.0, 40.0]
-PAF_PEAK_RANGE = (7.0, 14.0)              # search window for the strongest alpha peak
+PAF_PEAK_RANGE = (8.0, 13.0)              # ADR-009: 7–14 caught frontal theta at ~7 Hz; = alpha band
 PAF_COG_RANGE = (7.0, 13.0)               # centre-of-gravity fallback window
 BANDS = {                                 # Hz, half-open [lo, hi)
     "theta": (4.0, 8.0),
