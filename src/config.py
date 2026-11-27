@@ -91,6 +91,22 @@ BANDS = {                                 # Hz, half-open [lo, hi)
 V2_TO_UV2 = 1e12                          # V^2/Hz -> µV^2/Hz
 TBR_MIN_BETA_EXC_FRAC = 0.05              # ADR-008: beta_exc < 5% of beta_abs -> no beta rhythm, tbr_osc = NaN
 
+# --------------------------------------------------------------------------- reference (ADR-010)
+# Features with a reference distribution, and the transform applied before mean/std/rank.
+# ln1p: power/ratio features that can be exactly 0 (no rhythm above 1/f); ln: never 0.
+REFERENCE_TRANSFORMS = {
+    "tbr_osc": "ln1p",
+    "tbr_classic": "ln",
+    "paf": "none",
+    "alpha_exc": "ln1p",
+    "faa": "none",
+    "hibeta_exc": "ln1p",
+    "ap_exponent": "none",
+}
+SKEW_PERCENTILE_THRESHOLD = 1.0           # ADR-010 (owner): |skew| > 1 after transform -> percentile z
+PERCENTILE_Z_CAP = 4.0                    # ADR-010 (owner): |z| cap for percentile-method features
+REFERENCE_FEATURES_PATH = MODELS_DIR / "reference_features.csv"   # per-recording features behind the reference
+
 # --------------------------------------------------------------------------- scoring
 Z_PENALTY = 15.0                          # s = clip(100 - 15*|z|, 0, 100) (design choice)
 DIMENSIONS = {                            # feature lists per dimension (CLAUDE.md §7.6)
