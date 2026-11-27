@@ -127,6 +127,11 @@ def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
         log.info("ICA skipped: no ICA settings for channels %s", raw.ch_names)
 
     events, n_segments = _segment_events(raw)
+    # Events never cross a join by construction. Zero-length boundary marks sit on a segment's first
+    # sample and MNE's rounding then rejected some valid epochs (4/15 on S060 R03) → drop them here;
+    # other BAD_ annotations still reject (BUG-002).
+    ann = raw.annotations
+    raw.set_annotations(ann[[i for i, d in enumerate(ann.description) if d not in ("BAD boundary", "EDGE boundary")]])
     epochs = mne.Epochs(
         raw, events, event_id=[1], tmin=0, tmax=config.EPOCH_LENGTH_S - 1 / raw.info["sfreq"],
         baseline=None, preload=True, reject_by_annotation=True, verbose="ERROR",

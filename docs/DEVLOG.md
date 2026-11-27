@@ -220,3 +220,12 @@ frontal8 reference SDs on the transformed scale, eyes-open vs eyes-closed, with 
 Finding: the EO reference is wider for 4/7 features (ap_exponent, tbr_classic, paf, hibeta_exc) but narrower for alpha_exc, tbr_osc and faa.
 The 2.6-point gap is location, not width: S060's eyes-open alpha is high for an eyes-open recording (z 1.38) and near the eyes-closed mean
 (z 0.28) → Relaxation 80.6 vs 90.6; partly offset by high beta (Load 89.6 vs 84.3). Typicality is not a condition classifier.
+
+### 2026-11-27 21:53 — BUG-002: boundary marks rejected valid epochs in concatenated sessions
+Type: bugfix (BUG-002)
+Symptom: S060 R03 demo session (15 T0 blocks × 4.1 s) gave n_total 11, not 15; drop_log said ('BAD boundary',) for epochs 7, 9, 12, 14.
+Root cause: zero-length "BAD boundary" marks sit on a segment's first sample; MNE's time rounding put some inside the epoch window.
+Fix: segment events are computed from the marks, then the marks are removed from clean()'s working copy before epoching
+(other BAD_ annotations still reject). Test: test_boundary_marks_do_not_reject_valid_epochs (n_total == 15).
+Before → After: S060 s02 n_total 11 → 15 (n_kept 3 → 3); continuous files unaffected (no boundary marks).
+Files: src/preprocess.py, tests/test_preprocess.py

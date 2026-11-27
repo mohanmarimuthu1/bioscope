@@ -132,3 +132,14 @@ def test_concatenated_segments_epoch_per_segment_without_crossing():
         assert not any(s < c < s + dur for c in cuts)
     epochs, qc = clean(cat, config.DATASET_LINE_FREQ)
     assert qc["n_segments"] == 3 and qc["n_total"] == 5
+
+
+DEMO_S02 = config.DATA_DEMO / "S060_s02_R03_raw.fif"
+
+
+@pytest.mark.skipif(not DEMO_S02.exists(), reason="demo files not built")
+def test_boundary_marks_do_not_reject_valid_epochs():
+    """BUG-002: zero-length boundary marks at a segment's first sample dropped 4/15 epochs on S060 R03."""
+    raw = load_eeg(str(DEMO_S02), "frontal8")[0]
+    _, qc = clean(raw, config.DATASET_LINE_FREQ)
+    assert qc["n_segments"] == 15 and qc["n_total"] == 15
