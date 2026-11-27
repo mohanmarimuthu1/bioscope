@@ -131,3 +131,39 @@ Full length, not 20 s: 61 s gives ~29 epochs and full duration credit in the con
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-27 | d7bba16 | Created | — |
+
+## src/reference.py
+**Purpose:** the reference distributions the score compares against, and the one place that turns a feature value into a z (ADR-010).
+**Inputs → outputs:** `load_reference(condition, preset)` → `{feature: entry}`; `to_z(feature, x, entry)` → float z; `transform`, `build_entry`, `assert_no_leak`.
+**Algorithm:** (1) transform the value: ln(1+x) for tbr_osc/alpha_exc/hibeta_exc (they can be 0), ln for tbr_classic, none otherwise.
+(2) zscore cells: z = (t − mean)/std. (3) percentile cells (|skew| > 1 after transform): inside the reference range z = Φ⁻¹(rank/(n+1)),
+mid-rank 1-based; outside, the parametric z if larger in magnitude; |z| ≤ 4.
+**Why:** mean ± std on a skewed feature mislabels ordinary high values as extreme; ranks do not care about shape.
+**Key parameters (config):** `REFERENCE_TRANSFORMS`, `SKEW_PERCENTILE_THRESHOLD` = 1 (lower → more percentile cells), `PERCENTILE_Z_CAP` = 4.
+**Connects to:** built by scripts/build_reference.py; used by scoring.py (P4b).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | ed0a2e4 | Created | 5/28 cells percentile |
+
+## scripts/build_reference.py
+**Purpose:** build models/reference.json + models/reference_features.csv from S001–S050 R01/R02.
+**Steps:** 200 jobs (2 presets × 50 subjects × 2 runs) on 8 worker processes → load_eeg → clean(60 Hz) → extract → skip insufficient_data →
+`build_entry` per feature per cell → leak guard → sanity checks (EO PAF mean 9–11 Hz; EC alpha_exc > EO) → exit 1 on any failure.
+**Run:** `python scripts/build_reference.py` (~30 s). Output is identical between runs except `build_date`.
+**Current numbers:** EO PAF 9.65 / 10.42 Hz; alpha_exc EO→EC 1.71→4.90 / 7.92→32.14 µV² (frontal8 / muse4); used 44/49 · 47/48 of 50.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | ed0a2e4 | Created | first reference |
+
+## tests/test_reference.py
+10 tests: transforms at 0, mid-rank percentile, outside-range rule and cap, NaN input, leak guard, built json (4 cells, no leak, percentile ⇔ values), load_reference + sanity.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | a6ceb2a | Created | suite 53 passed |
+
+## models/reference.json · models/reference_features.csv
+Per preset → condition: `subjects_used`, `subjects_skipped` (with reason), `features` {transform, method, mean, std, n, skew, min, max, values?};
+top level: build_date, command, runs, candidate and excluded subjects, settings. The CSV has one row per recording (all session features + QC).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 7d588c9 | Created | see DEVLOG 21:10 |

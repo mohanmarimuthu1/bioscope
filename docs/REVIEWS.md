@@ -63,3 +63,20 @@ Gate: frontal8 EO 79% ≥ 70% ✓, EC 100% ≥ 70% ✓; muse4 EO 100% ≥ 50% �
 Tried to break: commits that are red in isolation, stray files, hooks bypassed.
 Checked: order feat(io) → data(sample) → test(io) keeps every commit green; 4 files total (src/io_utils.py, data/sample/sample_frontal8_raw.fif, tests/test_io.py, pytest.ini) + docs; all commits by the owner; hooks ran on each commit (and blocked one message, see DEVLOG).
 Found: none.
+
+## src/reference.py — 2026-11-27 — FIXED → PASS, KNOWN-ISSUE noted
+Tried to break: ln(0) inputs; NaN values; < 3 finite values; std 0; value exactly at min/max; far outside range; `python -O`; leaked S060/S061.
+Checked: 10 unit tests; ADR-010 worked example reproduced by hand-run code.
+Found: `assert_no_leak` used bare `assert` → silently disabled under -O. Fixed: explicit raise (ed0a2e4, verified under -O).
+Remaining: hybrid z jumps at the range edge (max 2.05 → just above 3.85, frontal8 EC hibeta_exc); `_read` is lru_cached, so a rebuilt json needs an app restart.
+
+## scripts/build_reference.py — 2026-11-27 — PASS
+Tried to break: determinism (2 rebuilds), NaN in json, demo/holdout leak, console encoding of µ.
+Checked: rebuild identical except build_date; no NaN/Infinity (now also `allow_nan=False`); 4 sanity checks PASS; skipped subjects listed per cell.
+Found: µ printed as mojibake on Windows console → ASCII "uV^2". Remaining: FastICA ConvergenceWarning on ~3% of fits (pre-existing, P2).
+
+## tests/test_reference.py — 2026-11-27 — PASS
+Tried to break: comparison with hand-computed mid-ranks and Φ⁻¹; caps both signs. Checked: 10 passed; suite 53 passed.
+
+## P4a phase PR review (499c293..HEAD) — 2026-11-27 — PASS
+Diff: config (+3 constants), reference.py, build_reference.py, tests, models/. Contract change load_reference(condition, preset) recorded in ADR-010. No scoring code yet (P4b). Author check: owner only.

@@ -144,3 +144,16 @@ Type: retro
 Went well: audit-first caught a spec bug (z ≥ 3 unreachable with 7 comps) with numbers before any feature code; every option was evaluated on the same 20 files.
 Broke + fix: 0–12% retention → ADR-005 (correlation ICA, 200 µV) → 97%; muse4 14–57% → ADR-006 (3-comp ICA) → 100%. Audit table column mislabelled "|z|" (values are |r|) — corrected in docs.
 Next: P3 must verify muse4 ICA did not remove alpha (EC > EO alpha_osc); S009 is an outlier to watch in the reference.
+
+### 2026-11-27 21:10 — P4a reference built (commits ed0a2e4, a6ceb2a, 7d588c9)
+Type: feature
+Change: scripts/build_reference.py + src/reference.py → models/reference.json (4 cells) + reference_features.csv (200 rows). ADR-010 transforms and percentile method.
+Why: score = typicality vs a condition- and preset-matched reference (§7.6).
+Effect on calculations: first reference. 5 of 28 feature cells use percentile z (tbr_osc ×3, frontal8 EO paf, frontal8 EC hibeta_exc).
+Numbers: EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4) — PASS 9–11. alpha_exc mean EO → EC: 1.71 → 4.90 µV² (frontal8), 7.92 → 32.14 (muse4) — PASS. Used EO/EC: frontal8 44/49, muse4 47/48. Skipped (0 epochs kept): S009 (all cells), S013, S048 (EO, + muse4 EC), S022, S024, S028 (frontal8 EO). Build 29–50 s on 8 workers; rebuild byte-identical except build_date.
+Files: src/config.py, src/reference.py, scripts/build_reference.py, tests/test_reference.py, models/
+
+### 2026-11-27 21:15 — P4a retro
+Went well: features were fast enough (200 extractions in ~30 s) to audit skew on the full reference before designing, and every number above comes from that run.
+Broke: ln(tbr_osc) = −inf on 6 recordings (theta_exc = 0); leak guard used bare `assert` (stripped by `python -O`) — both caught before commit.
+Next: P4b scoring must decide the percentile range-edge jump (ADR-010 KNOWN) and the frontal8 EO 12% skip rate.

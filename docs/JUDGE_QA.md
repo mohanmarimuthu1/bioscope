@@ -45,6 +45,14 @@ On 20 reference recordings this keeps a median 97% of epochs (eyes open 79%, eye
 A: With 8 channels ICA yields 7 components, and the largest z-score 7 numbers can produce is √6 ≈ 2.45, so the default z ≥ 3 never triggers.
 We measured it: 0 components removed in 20/20 files (ADR-005).
 
+**Q: What is the score compared against?**
+A: People recorded the same way: 50 public-dataset adults, same channel preset, same condition (eyes open or closed) — 4 separate references.
+frontal8 eyes-open uses 44 recordings, eyes-closed 49; muse4 47 and 48. Recordings with no clean epochs are skipped and listed.
+
+**Q: Your features are skewed — isn't a z-score wrong?**
+A: We measured it. Power features are log-transformed first (ln(1+x), since some are exactly 0); hibeta_exc skew 6.30 → 1.43.
+Any feature still skewed past |1| (5 of 28) is ranked against the reference instead (percentile → z), capped at |z| = 4 (ADR-010).
+
 ## Limitations
 **Q: Why is 4-channel less reliable?**
 A: (1) Blink removal is coarser: 3 ICA components instead of 7, and the blink reference (AF7/AF8) is half of the montage, so one component

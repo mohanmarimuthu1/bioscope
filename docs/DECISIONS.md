@@ -90,3 +90,30 @@ Reference/z use ln(tbr). Pitch anchor 1 reworded. Regression test: |Δlog tbr_os
 (frontal8, S001–S010 + S060, 20 usable recordings.)
 **Decision (owner):** 8–13 Hz peak search; centre-of-gravity fallback stays 7–13 Hz.
 **Consequence:** PAF window = alpha band; a genuine slow alpha below 8 Hz would be reported via the fallback.
+
+## ADR-010 — Reference per preset × condition; transforms; percentile z for skewed features (2026-11-27)
+**Context:** P3 left `_exc` features in µV², right-skewed and sometimes exactly 0. The P4a audit (S001–S050, R01/R02, both presets) also found `tbr_osc = 0` (theta_exc = 0) in 6 recordings, so ln(tbr_osc) = −inf. frontal8 and muse4 differ in scale (EC alpha_exc mean 4.90 vs 32.14 µV²).
+Skew (bias-corrected) before → after transform. Cells: frontal8 EO / EC · muse4 EO / EC. n = 44 / 49 / 47 / 48.
+| Feature | Transform | frontal8 EO | frontal8 EC | muse4 EO | muse4 EC |
+|---|---|---|---|---|---|
+| tbr_osc | ln(1+x) | 2.90 → **1.57** | 1.67 → 0.95 | 3.14 → **2.02** | 2.56 → **1.73** |
+| tbr_classic | ln | 1.31 → −0.19 | 0.65 → −0.66 | 1.38 → −0.40 | 1.37 → 0.12 |
+| paf | none | **1.19** | 0.10 | −0.02 | 0.29 |
+| alpha_exc | ln(1+x) | 1.39 → 0.44 | 1.60 → 0.14 | 2.00 → 0.01 | 1.80 → −0.42 |
+| faa | none | −0.10 | −0.30 | −0.42 | −0.15 |
+| hibeta_exc | ln(1+x) | 2.33 → 0.76 | 6.30 → **1.43** | 2.86 → 0.71 | 4.65 → 0.96 |
+| ap_exponent | none | −0.54 | −0.62 | −0.63 | −0.50 |
+(ln on tbr_osc would give −0.53 / −0.49 / −0.20 / −1.36 but only after dropping the zeros.)
+**Decision (owner):**
+1. Reference is separate per preset × condition (4 cells); presets never mix. Contract change: `load_reference(condition, preset)` (R11; no callers yet).
+2. Transforms: ln(1+x) for tbr_osc, alpha_exc, hibeta_exc (0 → 0); ln for tbr_classic (never 0 in the reference).
+3. |skew| > 1 after the transform → **percentile** method, else **zscore**. Bold cells above (5 of 28) are percentile.
+4. Percentile z: inside [min, max] of the reference, z = Φ⁻¹(rank/(n+1)) with 1-based mid-rank; outside, the parametric z on transformed values when its magnitude is larger; |z| ≤ 4.
+**Worked example** (frontal8 EC hibeta_exc, ln(1+x): n 49, mean 1.179, sd 0.902, range 0.141–4.651):
+| raw µV² | t | rank | z_pct | z_param | z |
+|---|---|---|---|---|---|
+| 1.64 (median) | 0.970 | 25 | 0.00 | −0.23 | **0.00** |
+| 103.7 (= max) | 4.651 | 49 | 2.05 | 3.85 | **2.05** (inside) |
+| 311 | 5.744 | 49.5 | 2.33 | 5.06 | **4.00** (outside, param, capped) |
+| 0.00 | 0.000 | 0.5 | −2.33 | −1.31 | **−2.33** (outside, pct larger) |
+**Consequence:** no −inf; per-cell method stored in reference.json (`transform`, `method`, `mean`, `std`, `n`, `skew`, `min`, `max`, `values` for percentile). KNOWN: the rule jumps at the range edge (max → 2.05, just above max → 3.85 in the example); flagged to owner for P4b. With n ≈ 44–49 the skew estimate has SE ≈ 0.35, so the threshold-1 split is a rule, not a test.

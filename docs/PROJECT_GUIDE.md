@@ -39,8 +39,12 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   (2) The specified "oscillatory ratio" moved *more* than classic power when only the 1/f slope changed → switched TBR, alpha and high beta
   to excess power above the line: slope sensitivity of TBR 0.68–1.04 → 0.01–0.03 (ADR-008).
 
+- P4a: the reference is split by preset as well as condition (muse4 alpha_exc is 4.6× frontal8 eyes-open, 6.6× eyes-closed). ln(tbr_osc) hit −inf on 6 recordings with
+  no theta rhythm → ln(1+x). Features still skewed after transform use a percentile z (ADR-010).
+
 ## 6. Current results
-*(P4 onward)*
+- Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings
+  skipped for 0 clean epochs (S009 everywhere; 5 more frontal8 eyes-open).
 
 ## 7. Limitations
 - Reference = 50 healthy US adults from one public dataset; typicality is relative to them only.
