@@ -28,6 +28,7 @@ DATASET_LINE_FREQ = 60.0                  # source: recorded in the US (60 Hz ma
 REFERENCE_SUBJECTS = [f"S{i:03d}" for i in range(1, 51)]   # ADR-002
 REFERENCE_RUNS = {"eyes_open": "R01", "eyes_closed": "R02"}  # source: dataset description
 DEMO_SUBJECT = "S060"                     # ADR-002: held out from reference and ML
+HOLDOUT_SUBJECTS = [f"S{i:03d}" for i in range(61, 110)]   # P6b external test: S061–S109, never trained on
 DEMO_RUNS = [f"R{i:02d}" for i in range(1, 15)]            # R01–R14
 DEMO_REST_LABEL = "T0"                    # source: dataset annotations (rest blocks)
 CONDITIONS = ("eyes_open", "eyes_closed")
@@ -68,6 +69,8 @@ MIN_EPOCHS = 6                            # below this: warn + lower confidence
 
 # --------------------------------------------------------------------------- spectral
 WELCH_N_PER_SEG_S = 2.0                   # 2 s segments -> 0.5 Hz bins (ADR-003)
+WELCH_OVERLAP_FRAC = 0.5                  # 1 s overlap -> 3 segments per 4 s epoch (ADR-003)
+FOOOF_MIN_R2 = 0.5                        # design choice: below this a channel's FOOOF fit is treated as failed
 PSD_FMIN = 1.0
 PSD_FMAX = 40.0
 FOOOF_SETTINGS = {
