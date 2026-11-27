@@ -204,3 +204,19 @@ Files: src/scoring.py, tests/test_scoring.py, docs/DECISIONS.md
 Went well: every rule change (continuous z, n_kept ≥ 6) was measured before → after on the full reference, and both sanity directions hold.
 Broke: two scoring edge cases (None value, signal-quality-only composite) — caught by adversarial probes, regression-tested.
 Next: the composite separates EO from EC weakly (0.5–2.2 points on S060); sensitivity analysis (P6) should show how weights move this.
+
+### 2026-11-27 21:40 — Check: why S060 R01 scores higher vs the EC reference (88.9) than vs EO (86.3)
+Type: analysis (report only, no tuning)
+frontal8 reference SDs on the transformed scale, eyes-open vs eyes-closed, with S060 R01 z:
+| Feature | EO sd | EC sd | EO/EC | z vs EO | z vs EC |
+|---|---|---|---|---|---|
+| tbr_osc (ln1p) | 0.469 | 0.534 | 0.88 | 0.58 | −0.06 |
+| tbr_classic (ln) | 0.789 | 0.588 | 1.34 | — | — |
+| paf | 1.126 | 0.867 | 1.30 | 1.11 | 1.18 |
+| alpha_exc (ln1p) | 0.592 | 0.808 | 0.73 | 1.38 | 0.28 |
+| faa | 0.283 | 0.305 | 0.93 | −1.21 | −0.98 |
+| hibeta_exc (ln1p) | 0.883 | 0.718 | 1.23 | 0.94 | 1.79 |
+| ap_exponent | 0.389 | 0.260 | 1.50 | 0.45 | −0.30 |
+Finding: the EO reference is wider for 4/7 features (ap_exponent, tbr_classic, paf, hibeta_exc) but narrower for alpha_exc, tbr_osc and faa.
+The 2.6-point gap is location, not width: S060's eyes-open alpha is high for an eyes-open recording (z 1.38) and near the eyes-closed mean
+(z 0.28) → Relaxation 80.6 vs 90.6; partly offset by high beta (Load 89.6 vs 84.3). Typicality is not a condition classifier.

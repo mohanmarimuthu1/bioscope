@@ -23,6 +23,10 @@
   eyes-open reference may under-represent them (accepted, ADR-010).
 - **The composite separates conditions weakly.** On S060 the eyes-open/eyes-closed difference is 0.5–2.2 composite points; it is carried
   by alpha power (z 3.3–4.1), while the other features are near-typical in both runs and averaging dilutes it.
+- **Typicality is not condition detection.** A person with strong eyes-open alpha can look more typical of the eyes-closed reference:
+  S060's eyes-open run scores 88.9 vs eyes-closed and 86.3 vs eyes-open (frontal8), driven by alpha (z 0.28 vs 1.38). The eyes-open
+  reference is also wider for 4 of 7 features (1/f slope ×1.50, PAF ×1.30, high beta ×1.23, classic TBR ×1.34), so eyes-open deviations
+  cost fewer points. The UI must always state which reference was used.
 - **4-channel (muse4) is an approximation** of a Muse headset (TP7/TP8 instead of TP9/TP10) and uses a coarser 3-component ICA.
 - **Typicality, not health.** Scores compare a recording with 50 healthy adults from one public dataset (PhysioNet EEGMMI).
 - Research prototype, not a diagnostic device.

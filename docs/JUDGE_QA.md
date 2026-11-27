@@ -61,6 +61,18 @@ against the eyes-open reference; its eyes-closed run scores 84.1 against eyes-op
 **Q: Why not train on "healthy vs unhealthy" labels?**
 A: The public resting data has no such labels, and inventing them would be fake. Typicality against a matched reference is what the data supports.
 
+**Q: Why doesn't the composite separate eyes open/closed strongly?**
+A: Because it is not built to. The score asks "how typical is this recording of people recorded the same way", not "were the eyes open".
+Most features (TBR, PAF, FAA, 1/f slope) are similar in both conditions, so they stay typical either way; the contrast lives in alpha.
+On S060 the composite moves only 0.5–2.2 points, but Relaxation drops to 64.3 and the explanation reads "Alpha power above background is
+4.1 SD above the eyes-open reference" when the eyes-closed run is scored against the eyes-open reference. We did not tune weights to
+exaggerate this. Telling the conditions apart is the job of the separate pipeline-validation model (P6).
+
+**Q: Your eyes-open run scores higher against the eyes-closed reference. Isn't that a bug?**
+A: No. We checked: S060 has unusually strong eyes-open alpha (z 1.38 vs the eyes-open reference, 0.28 vs eyes-closed), and the eyes-open
+reference is wider for 4 of 7 features. Typicality versus a reference is not condition detection; the app always uses the condition the
+user declares, and the session page names the reference used (P7).
+
 ## Limitations
 **Q: Why is 4-channel less reliable?**
 A: (1) Blink removal is coarser: 3 ICA components instead of 7, and the blink reference (AF7/AF8) is half of the montage, so one component
