@@ -128,3 +128,7 @@ z_pct(max) − z_pct(next) ≈ 0.17 at n = 49) — inherent to ranks.
 | 103.7 + ε | 4.651⁺ | 3.85 | **2.05** |
 | 311 | 5.743 | 4.00 (capped) | **3.26** |
 | 0.00 | 0.000 | −2.33 | **−2.21** |
+**Inclusion and coverage (2026-11-27 21:30, owner).** A recording enters the reference only with n_kept ≥ MIN_EPOCHS (6). Used of 50
+(EO/EC): frontal8 40/42, muse4 44/47. The frontal8 eyes-open skip rate (12% at rev 1, 20% with the ≥ 6 rule) is **accepted** and stated in
+methodology.md limitations. The rule moved two method choices: frontal8 EC hibeta_exc → zscore (skew 0.76), muse4 EC hibeta_exc →
+percentile (skew 1.02, borderline). Percentile cells: frontal8 EO tbr_osc, paf; muse4 EO tbr_osc; muse4 EC tbr_osc, hibeta_exc.
