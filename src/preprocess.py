@@ -38,6 +38,39 @@ def _filter(raw: mne.io.Raw, line_freq: float) -> bool:
     return False
 
 
+def _run_ica(raw: mne.io.Raw, warnings: list[str]) -> tuple[bool, list[int], list[float]]:
+    """Fit ICA and remove blink components in place, using Fp1/Fp2 as EOG proxies.
+
+    Returns (ica_used, excluded_components, per-component max |EOG z-score|).
+    Exclusion = components over the z threshold, capped at the top ICA_MAX_EXCLUDE by
+    |score| (with n−1 = 7 components the z-scores are unstable, so we cap).
+    Any failure → no ICA, a warning, and processing continues.
+    """
+    eog = [ch for ch in config.EOG_PROXY_CHANNELS if ch in raw.ch_names]
+    if not eog:
+        warnings.append("ICA skipped: no Fp1/Fp2 channel to use as an eye-blink reference")
+        return False, [], []
+    try:
+        ica = mne.preprocessing.ICA(
+            n_components=len(raw.ch_names) - 1, method=config.ICA_METHOD,
+            random_state=config.RANDOM_STATE, max_iter="auto", verbose="ERROR",
+        )
+        ica.fit(raw, verbose="ERROR")
+        inds, scores = ica.find_bads_eog(
+            raw, ch_name=eog, threshold=config.ICA_EOG_THRESHOLD, verbose="ERROR"
+        )
+        combined = np.abs(np.atleast_2d(np.asarray(scores))).max(axis=0)
+        chosen = sorted({int(i) for i in inds}, key=lambda i: -combined[i])[: config.ICA_MAX_EXCLUDE]
+        ica.exclude = chosen
+        ica.apply(raw, verbose="ERROR")
+        log.info("ICA excluded %s; EOG |z| per component %s", chosen, combined.round(2).tolist())
+        return True, chosen, combined.round(3).tolist()
+    except Exception as exc:  # noqa: BLE001 — any ICA failure must degrade, not crash
+        warnings.append(f"ICA failed ({type(exc).__name__}: {exc}); continued without blink removal")
+        log.warning("ICA failed: %s", exc)
+        return False, [], []
+
+
 def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
     """Preprocess a preset-picked Raw into clean 4 s epochs plus a QC dict.
 
@@ -54,6 +87,10 @@ def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
     notch_applied = _filter(raw, line_freq)
 
     ica_used, ica_excluded, ica_scores = False, [], []
+    if len(raw.ch_names) >= config.ICA_MIN_CHANNELS:
+        ica_used, ica_excluded, ica_scores = _run_ica(raw, warnings)
+    else:
+        log.info("ICA skipped: %d channels < %d", len(raw.ch_names), config.ICA_MIN_CHANNELS)
 
     epochs = mne.make_fixed_length_epochs(
         raw, duration=config.EPOCH_LENGTH_S, overlap=config.EPOCH_OVERLAP_S,
