@@ -1,14 +1,17 @@
 """Download the PhysioNet EEGMMI files BioScope needs into data/raw/.
 
 WHAT:  Reference set S001–S050 × {R01, R02} (100 files) + demo subject S060 × R01–R14
-       (14 files) = 114 EDF files.
+       (14 files) = 114 EDF files. With --holdout: only the external-test set
+       S061–S109 × {R01, R02} (98 files).
 WHY:   Reproducible, offline-after-first-run data for the reference, ML and demo.
 CAVEATS: Idempotent — existing complete files are skipped. Downloads go to a .part
        file and are renamed only on success, so an interrupted run never leaves a
        truncated .edf that looks complete. Network errors retry 3× with backoff.
 
-Usage:  python scripts/download_data.py
+Usage:  python scripts/download_data.py              # reference + demo
+        python scripts/download_data.py --holdout    # S061–S109 R01/R02
 """
+import argparse
 import sys
 import time
 import urllib.error
@@ -25,8 +28,10 @@ BACKOFF_S = 2.0
 TIMEOUT_S = 60
 
 
-def wanted_files() -> list[tuple[str, str]]:
-    """Return (subject, run) pairs to fetch: reference R01/R02 + all demo runs."""
+def wanted_files(holdout: bool = False) -> list[tuple[str, str]]:
+    """Return (subject, run) pairs: reference R01/R02 + demo runs, or the holdout R01/R02."""
+    if holdout:
+        return [(s, r) for s in config.HOLDOUT_SUBJECTS for r in config.REFERENCE_RUNS.values()]
     ref = [(s, r) for s in config.REFERENCE_SUBJECTS for r in config.REFERENCE_RUNS.values()]
     demo = [(config.DEMO_SUBJECT, r) for r in config.DEMO_RUNS]
     return ref + demo
@@ -57,16 +62,19 @@ def fetch(subject: str, run: str, dest_dir: Path) -> str:
 
 
 def main() -> int:
+    parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
+    parser.add_argument("--holdout", action="store_true", help="fetch S061–S109 R01/R02 only")
+    args = parser.parse_args()
     counts = {"skipped": 0, "downloaded": 0, "failed": 0}
-    files = wanted_files()
+    files = wanted_files(args.holdout)
     print(f"Fetching {len(files)} files into {config.DATA_RAW}")
     for i, (subject, run) in enumerate(files, 1):
         status = fetch(subject, run, config.DATA_RAW)
         counts[status] += 1
         if status != "skipped":
             print(f"[{i:3d}/{len(files)}] {subject}{run}.edf {status}")
-    present = len(list(config.DATA_RAW.glob("S*/S*R*.edf")))
-    print(f"Done: {counts} | EDF files present: {present}")
+    present = sum((config.DATA_RAW / s / f"{s}{r}.edf").exists() for s, r in files)
+    print(f"Done: {counts} | wanted files present: {present}/{len(files)}")
     return 1 if counts["failed"] else 0
 
 
