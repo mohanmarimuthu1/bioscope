@@ -81,11 +81,34 @@ def _run_ica(raw: mne.io.Raw, settings: dict, warnings: list[str]) -> tuple[bool
         return False, [], []
 
 
+def _segment_events(raw: mne.io.Raw) -> tuple[np.ndarray, int]:
+    """Fixed-length epoch events restarted at every concatenation boundary (ADR-012).
+
+    WHY: `mne.concatenate_raws` marks joins with "BAD boundary"/"EDGE boundary". A single 2 s grid
+    from t = 0 puts most 4 s epochs across a join (S060 T0 blocks are 4.1 s → 1 epoch per session).
+    Here each segment gets its own grid from its first sample, and no epoch crosses a join.
+    For a file without boundaries the events equal `mne.make_fixed_length_events`.
+    """
+    sfreq = raw.info["sfreq"]
+    dur = int(round(config.EPOCH_LENGTH_S * sfreq))
+    step = sfreq * (config.EPOCH_LENGTH_S - config.EPOCH_OVERLAP_S)
+    ann = raw.annotations
+    is_b = np.isin(ann.description, ["BAD boundary", "EDGE boundary"])
+    cuts = raw.time_as_index(ann.onset[is_b], use_rounding=True, origin=ann.orig_time) if is_b.any() else []
+    edges = sorted({0, raw.n_times} | {int(c) for c in cuts if 0 < c < raw.n_times})
+    starts = [np.arange(s, e - dur + 1, step).astype(int) for s, e in zip(edges[:-1], edges[1:])]
+    ts = np.concatenate(starts) if starts else np.array([], dtype=int)
+    if len(ts) == 0:
+        raise ValueError(f"No {config.EPOCH_LENGTH_S:.0f} s segment without a boundary in this recording")
+    events = np.c_[ts + raw.first_samp, np.zeros(len(ts), dtype=int), np.ones(len(ts), dtype=int)]
+    return events, len(edges) - 1
+
+
 def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
     """Preprocess a preset-picked Raw into clean 4 s epochs plus a QC dict.
 
     qc keys: n_total, n_kept, retained_frac, ica_used, ica_excluded, warnings,
-    notch_applied, ica_eog_scores, epoch_ptp_uv (additive keys after `warnings`).
+    notch_applied, ica_eog_scores, epoch_ptp_uv, n_segments (additive keys after `warnings`).
     """
     if raw.times[-1] + 1 / raw.info["sfreq"] < config.EPOCH_LENGTH_S:
         raise ValueError(
@@ -103,9 +126,10 @@ def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
     else:
         log.info("ICA skipped: no ICA settings for channels %s", raw.ch_names)
 
-    epochs = mne.make_fixed_length_epochs(
-        raw, duration=config.EPOCH_LENGTH_S, overlap=config.EPOCH_OVERLAP_S,
-        preload=True, verbose="ERROR",
+    events, n_segments = _segment_events(raw)
+    epochs = mne.Epochs(
+        raw, events, event_id=[1], tmin=0, tmax=config.EPOCH_LENGTH_S - 1 / raw.info["sfreq"],
+        baseline=None, preload=True, reject_by_annotation=True, verbose="ERROR",
     )
     n_total = len(epochs)
     ptp_uv = _epoch_ptp_uv(epochs)
@@ -131,6 +155,7 @@ def clean(raw: mne.io.Raw, line_freq: float) -> tuple[mne.Epochs, dict]:
         "notch_applied": notch_applied,
         "ica_eog_scores": ica_scores,
         "epoch_ptp_uv": ptp_uv,
+        "n_segments": n_segments,
     }
     log.info("clean: kept %d/%d epochs (%.0f%%), ica_used=%s", n_kept, n_total, retained * 100, ica_used)
     return epochs, qc

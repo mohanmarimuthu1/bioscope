@@ -143,3 +143,15 @@ confidence needs duration_s, which only `load_eeg` meta has. The spec is silent 
    If no EEG dimension can be scored, composite = None (signal quality alone is not a brain score; review found it gave 100).
 **Consequence:** P5/P7 callers must pass the preset and put duration_s into qc. Composite stays comparable only when all 4 dimensions are
 present; the UI must show the renormalisation warning.
+
+## ADR-012 — Segment-aware epoching; db_path kwarg; baseline flag rule (2026-11-27)
+**Context:** Demo sessions 2–13 join 15 T0 rest blocks (4.1 s each) with `mne.concatenate_raws`, which marks joins with BAD/EDGE boundary
+annotations (filters then run per segment; epochs overlapping a BAD annotation are rejected). But `make_fixed_length_epochs` lays one 2 s grid
+from t = 0, so on S060 R03 every epoch after the first straddled a join: **n_total = 1** for a 61.5 s session.
+**Decision (owner-approved plan):**
+1. `preprocess._segment_events`: split at boundary onsets, restart the 4 s / 2 s-step grid at each segment's first sample, then
+   `mne.Epochs(..., reject_by_annotation=True)`. Without boundaries the events equal MNE's (tested); full reference rebuild →
+   reference_features.csv byte-identical, reference.json identical except build_date. qc gains additive `n_segments`.
+2. db functions take an optional `db_path` (default config.DB_PATH) so tests use a temp file. Additive.
+3. flag_shifts never flags the baseline sessions themselves; baseline std uses ddof=1 with the 2.0 floor; < 3 sessions → provisional baseline.
+**Consequence:** a 4.1 s block yields exactly one 4 s epoch (the 0.1 s remainder is unused); epochs never cross a join.

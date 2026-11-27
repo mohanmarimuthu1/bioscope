@@ -9,7 +9,7 @@ from src.preprocess import clean
 
 SAMPLE = config.DATA_SAMPLE / "sample_frontal8_raw.fif"
 QC_KEYS = {"n_total", "n_kept", "retained_frac", "ica_used", "ica_excluded", "warnings",
-           "notch_applied", "ica_eog_scores", "epoch_ptp_uv"}
+           "notch_applied", "ica_eog_scores", "epoch_ptp_uv", "n_segments"}
 
 
 def _synthetic(channels: list[str], seconds: float, sd_v: float, seed: int = 42) -> mne.io.RawArray:
@@ -102,3 +102,33 @@ def test_ica_failure_degrades_with_warning(monkeypatch):
     assert qc["ica_used"] is False
     assert any("ICA failed" in w for w in qc["warnings"])
     assert len(epochs) > 0
+
+
+# ---------------------------------------------------------------- ADR-012 segment-aware epoching
+from src.preprocess import _segment_events  # noqa: E402
+
+
+def test_continuous_file_events_match_mne():
+    raw = load_eeg(str(SAMPLE), "frontal8")[0]
+    ours, n_seg = _segment_events(raw)
+    ref = mne.make_fixed_length_events(raw, duration=config.EPOCH_LENGTH_S, overlap=config.EPOCH_OVERLAP_S)
+    assert n_seg == 1
+    np.testing.assert_array_equal(ours, ref)
+
+
+def test_concatenated_segments_epoch_per_segment_without_crossing():
+    chans = config.PRESETS["frontal8"]["channels"]
+    segs = [_synthetic(chans, s, 10e-6, seed=i) for i, s in enumerate([4.1, 9.0, 4.1])]
+    cat = mne.concatenate_raws(segs, verbose="ERROR")
+    cat.set_montage("standard_1020")
+    events, n_seg = _segment_events(cat)
+    assert n_seg == 3
+    # 4.1 s → 1 epoch; 9.0 s → starts 0, 2, 4 (4+4 ≤ 9) → 3 epochs
+    assert len(events) == 5
+    ann = cat.annotations
+    cuts = cat.time_as_index(ann.onset[ann.description == "BAD boundary"], origin=ann.orig_time)
+    dur = int(config.EPOCH_LENGTH_S * 160)
+    for s in events[:, 0] - cat.first_samp:
+        assert not any(s < c < s + dur for c in cuts)
+    epochs, qc = clean(cat, config.DATASET_LINE_FREQ)
+    assert qc["n_segments"] == 3 and qc["n_total"] == 5
