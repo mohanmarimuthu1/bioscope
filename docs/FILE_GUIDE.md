@@ -191,3 +191,53 @@ missing duration, bad args, 0 epochs end-to-end, sample file, S060 R01 > R02 vs 
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-27 | 7cbe9e3 | Created | suite 72 passed |
+
+## src/longitudinal.py
+**Purpose:** turn a list of session composites into baseline, EMA, Bayesian posterior and shift flags (§7.7).
+**Functions:** `compute_baseline(scores, n=3)` → {mean, std (ddof=1, floor 2.0), raw_std, n, provisional}; `ema(scores, 0.3)`;
+`obs_sd_from_confidence(conf)` → 5 + 15·(1 − conf); `bayesian_track(scores, obs_sd)` → [(mean, sd)] with prior N(s1, 15²);
+`flag_shifts(scores, baseline, 2.0)` (never flags the baseline sessions); `deltas_vs_baseline(values)`.
+**Why Bayesian:** a session with confidence 0.3 has obs_sd 15.5 and barely moves the posterior; one with 0.98 (sd 5.3) moves it a lot.
+**Caveat:** inputs must be finite; callers drop composite None sessions.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 5c2a2dd | Created | S051 posterior 87.0 ± 5.3 → 84.3 ± 1.5 over 13 sessions |
+
+## src/db.py
+**Purpose:** SQLite store of every session (features, QC and the full score dict as JSON). `save_session`, `load_subject`, `list_subjects`,
+`delete_subject`; optional `db_path` (ADR-012). NaN/inf are stored as null and return as None. DB file bioscope.db is gitignored.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 8a9a15b | Created | — |
+
+## scripts/build_demo_sessions.py
+**Purpose:** build data/demo/ (13 × 8-ch frontal8 .fif) for S051 and seed the DB. s01 = R01; s02–s13 = T0 blocks of R03–R14 joined by
+`mne.concatenate_raws` (boundary annotations kept, filtered per block, no epoch crosses a join — asserted). Prints the longitudinal table.
+**Run:** `python scripts/download_data.py --demo` then `python scripts/build_demo_sessions.py` (~1 min).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 81bea35 | Created (S051) | 13/13 sessions scored, 14–15 epochs each |
+
+## tests/test_longitudinal.py · tests/test_db.py
+7 longitudinal tests (hand-computed EMA and posterior, std floor, flags, posterior sd monotone ↓, None rejected); 3 db tests (None/NaN/inf/numpy
+round trip, ordering with a None composite, list/delete) — all in a tmp_path database.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 5a3b972 | Created | suite 85 passed |
+
+## data/demo/
+13 files `S051_sNN_<run>_raw.fif`, frontal8, float32, annotations (T0 + BAD/EDGE boundary) kept, 4.0 MB total.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 3fd6025 | Created | see DEVLOG 22:02 |
+
+## src/preprocess.py — update (ADR-012, BUG-002)
+`_segment_events`: the 4 s / 2 s grid restarts at every concatenation boundary; boundary marks are removed from the working copy before
+epoching. Continuous files: identical events (tested), reference unchanged. qc gains `n_segments`.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 6ebb2ae | Segment-aware epoching | S060 R03 T0 n_total 1 → 11 |
+| 2026-11-27 | 0b520a8 | BUG-002 boundary marks | n_total 11 → 15 |
+
+## scripts/download_data.py — update
+`--demo` (commit 29aa9e8): S051 R01 + R03–R14 (13 files), mutually exclusive with `--holdout`.

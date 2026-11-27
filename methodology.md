@@ -27,6 +27,11 @@
   S060's eyes-open run scores 88.9 vs eyes-closed and 86.3 vs eyes-open (frontal8), driven by alpha (z 0.28 vs 1.38). The eyes-open
   reference is also wider for 4 of 7 features (1/f slope ×1.50, PAF ×1.30, high beta ×1.23, classic TBR ×1.34), so eyes-open deviations
   cost fewer points. The UI must always state which reference was used.
+- **Between-task rest is noisier than true rest.** In S060, rest blocks inside the motor runs were 1.5–2× the amplitude of its
+  dedicated rest run on every channel; only 0–5 of 15 epochs passed rejection and confidence fell to 0.25–0.43. The confidence score caught
+  it; we did not loosen the threshold. The longitudinal demo uses S051 instead (12/12 runs clean, screened from S051–S059 by a fixed rule).
+- **The longitudinal demo is one visit.** Its 13 sessions are sequential rest blocks from a single recording session: they demonstrate the
+  tracker (baseline, EMA, Bayesian posterior, flags), not multi-day change. With S051 no session is flagged (largest deviation 1.74 SD).
 - **4-channel (muse4) is an approximation** of a Muse headset (TP7/TP8 instead of TP9/TP10) and uses a coarser 3-component ICA.
 - **Typicality, not health.** Scores compare a recording with 50 healthy adults from one public dataset (PhysioNet EEGMMI).
 - Research prototype, not a diagnostic device.

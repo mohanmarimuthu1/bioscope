@@ -229,3 +229,47 @@ Fix: segment events are computed from the marks, then the marks are removed from
 (other BAD_ annotations still reject). Test: test_boundary_marks_do_not_reject_valid_epochs (n_total == 15).
 Before → After: S060 s02 n_total 11 → 15 (n_kept 3 → 3); continuous files unaffected (no boundary marks).
 Files: src/preprocess.py, tests/test_preprocess.py
+
+### 2026-11-27 21:47 — P5 longitudinal + DB  (commits 5c2a2dd, 5a3b972, 8a9a15b)
+Type: feature
+Change: src/longitudinal.py (baseline ddof=1 + 2.0 floor, EMA α 0.3, Gaussian posterior with obs_sd = 5 + 15·(1 − conf), flags |z| > 2 after the
+baseline window, deltas vs baseline); src/db.py (one sqlite table, JSON columns, NaN/inf → null, numpy → Python).
+Effect on calculations: none on scores. Hand-checked: EMA 80, 90, 70 → 80, 83, 79.1; posterior after (80, 90) with sd 5 → 84.737 ± 3.44.
+Files: src/longitudinal.py, src/db.py, tests/test_longitudinal.py, tests/test_db.py
+
+### 2026-11-27 21:55 — Finding: between-task rest in S060 is much noisier than true rest
+Type: analysis
+S060's T0 blocks inside the motor runs R03–R14 are 1.5–2× the amplitude of its R01 rest on every channel (median p2p F3 ≈ 300 vs 196 µV,
+Fp2 ≈ 420 vs 222 µV, before ICA). Filtering the continuous run first gives the same p2p (351–469 µV on R03), so it is the data, not the joins.
+After ICA, 0–5 of 15 epochs passed 200 µV; 5 of 12 sessions unscorable, the rest confidence 0.25–0.43 — the confidence score flagged it.
+Threshold not loosened. Demo subject switched to S051 (ADR-012 addendum); S060 remains the sample/test subject.
+
+### 2026-11-27 22:02 — Longitudinal demo built on S051  (commits 3408df9, 29aa9e8, 81bea35, 3fd6025)
+Type: feature + data
+Command: python scripts/download_data.py --demo && python scripts/build_demo_sessions.py
+Before → After (demo subject S060 → S051): sessions scored 8/13 → 13/13; T0 kept per session 0–5 → 14–15; T0 confidence 0.25–0.43 → 0.87–0.99.
+| Session | Source | Kept | Composite | Confidence | EMA | Posterior mean ± sd | Flag |
+|---|---|---|---|---|---|---|---|
+| s01 | R01 eyes-open rest | 29/29 | 87.0 | 0.96 | 87.0 | 87.0 ± 5.3 | |
+| s02 | R03 T0 blocks | 15/15 | 83.5 | 0.97 | 85.9 | 85.3 ± 3.8 | |
+| s03 | R04 T0 blocks | 15/15 | 82.1 | 0.98 | 84.8 | 84.2 ± 3.1 | |
+| s04 | R05 T0 blocks | 15/15 | 85.1 | 0.98 | 84.9 | 84.4 ± 2.6 | |
+| s05 | R06 T0 blocks | 15/15 | 85.6 | 0.98 | 85.1 | 84.7 ± 2.4 | |
+| s06 | R07 T0 blocks | 15/15 | 86.6 | 0.98 | 85.5 | 85.0 ± 2.2 | |
+| s07 | R08 T0 blocks | 15/15 | 82.8 | 0.99 | 84.7 | 84.7 ± 2.0 | |
+| s08 | R09 T0 blocks | 15/15 | 84.8 | 0.98 | 84.8 | 84.7 ± 1.9 | |
+| s09 | R10 T0 blocks | 15/15 | 85.9 | 0.87 | 85.1 | 84.8 ± 1.8 | |
+| s10 | R11 T0 blocks | 15/15 | 85.4 | 0.99 | 85.2 | 84.8 ± 1.7 | |
+| s11 | R12 T0 blocks | 15/15 | 82.6 | 0.96 | 84.4 | 84.6 ± 1.6 | |
+| s12 | R13 T0 blocks | 14/15 | 79.8 | 0.96 | 83.0 | 84.3 ± 1.6 | |
+| s13 | R14 T0 blocks | 15/15 | 84.8 | 0.97 | 83.6 | 84.3 ± 1.5 | |
+Baseline (s01–s03): 84.2 ± 2.53. No flags: largest deviation s12, |79.8 − 84.2| / 2.53 = 1.74 < 2. Not tuned.
+
+Files: src/config.py, src/reference.py, scripts/download_data.py, scripts/build_demo_sessions.py, data/demo/ (13 × ~0.3 MB)
+
+### 2026-11-27 22:05 — P5 retro
+Went well: the T0 problem was diagnosed with numbers before any change (grid misalignment → ADR-012; boundary rounding → BUG-002;
+amplitude → data), and the screening rule was fixed before looking at candidates.
+Broke: epoching straddled joins (1 epoch/session); boundary marks rejected 4/15 valid epochs after a FIF round trip; the first BUG-002 test
+did not reproduce the bug (in-memory only) — rewritten to round-trip through FIF and shown to fail on the old code.
+Next: P6 ML validation (train subjects from reference.json; assert_no_leak covers S051/S060/holdout).

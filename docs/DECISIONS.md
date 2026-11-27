@@ -155,3 +155,20 @@ from t = 0, so on S060 R03 every epoch after the first straddled a join: **n_tot
 2. db functions take an optional `db_path` (default config.DB_PATH) so tests use a temp file. Additive.
 3. flag_shifts never flags the baseline sessions themselves; baseline std uses ddof=1 with the 2.0 floor; < 3 sessions → provisional baseline.
 **Consequence:** a 4.1 s block yields exactly one 4 s epoch (the 0.1 s remainder is unused); epochs never cross a join.
+**Addendum (2026-11-27 22:00, owner) — longitudinal demo subject S051.** S060's T0 blocks inside the motor runs kept 0–5 of 15 epochs
+at 200 µV (5 of 12 sessions unscorable). Screened S051–S059 (outside the reference and holdout sets) through the exact demo pipeline:
+| Subject | R01 kept | T0 kept per run R03–R14 | Runs ≥ 6 kept | Median T0 confidence |
+|---|---|---|---|---|
+| **S051** | 29 | 15 15 15 15 15 15 15 15 15 15 14 15 | **12/12** | **0.98** |
+| S055 | 29 | 15 ×12 | 12/12 | 0.96 |
+| S059 | 0 | 11 13 10 14 11 14 5 12 12 13 1 13 | 10/12 | 0.85 |
+| S057 | 29 | 15 15 15 10 3 1 12 2 7 2 13 7 | 8/12 | 0.53 |
+| S054 | 29 | 3 8 15 3 6 2 1 15 0 1 10 14 | 6/12 | 0.53 |
+| S052 | 0 | 0 1 1 1 5 2 11 4 10 10 7 2 | 4/12 | 0.54 |
+| S056 | 17 | 4 0 2 0 1 2 9 5 0 0 0 1 | 1/12 | 0.23 |
+| S058 | 0 | 1 0 0 0 1 10 0 0 0 0 0 0 | 1/12 | 0.00 |
+| S053 | 0 | 0 ×12 | 0/12 | 0.00 |
+| *S060 (was)* | 27 | 3 2 0 0 0 5 1 0 1 1 0 2 | 0/12 | — |
+Pick rule (owner): most runs with ≥ 6 kept; tie → higher median confidence; accept if ≥ 10/12. S051 and S055 tie at 12/12 → **S051** (0.98 > 0.96).
+`config.DEMO_LONGITUDINAL_SUBJECT = "S051"`; config refuses to load if either demo subject is in the reference or holdout lists, and
+`reference.assert_no_leak` (also used for ML training subjects) rejects it. S060 stays the held-out sample/test subject (sample file, tests, P3/P4 numbers unchanged).

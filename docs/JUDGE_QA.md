@@ -73,6 +73,17 @@ A: No. We checked: S060 has unusually strong eyes-open alpha (z 1.38 vs the eyes
 reference is wider for 4 of 7 features. Typicality versus a reference is not condition detection; the app always uses the condition the
 user declares, and the session page names the reference used (P7).
 
+**Q: Is the trend real multi-day change?**
+A: No. The 13 demo sessions are sequential rest blocks from one visit of one public-dataset subject (S051): its eyes-open rest run, then the
+rest blocks between motor tasks in each of 12 later runs. They demonstrate the tracker mechanics — baseline 84.2 ± 2.5 from sessions 1–3, EMA,
+Bayesian posterior narrowing from ± 5.3 to ± 1.5 — not change over days. No session crosses the 2 SD flag (largest 1.74 SD).
+
+**Q: Why S051, not S060?**
+A: S060 is still our held-out test subject, but its between-task rest blocks were 1.5–2× the amplitude of its true rest run, so only 0–5 of 15
+epochs per session passed artefact rejection (confidence 0.25–0.43, 5 sessions unscorable). Our confidence score caught that. We did not
+loosen the rejection threshold; we screened S051–S059 (never in the reference or holdout) with a rule fixed in advance — most runs with
+≥ 6 clean epochs, tie broken by confidence — and S051 kept 14–15 of 15 epochs in all 12 runs.
+
 ## Limitations
 **Q: Why is 4-channel less reliable?**
 A: (1) Blink removal is coarser: 3 ICA components instead of 7, and the blink reference (AF7/AF8) is half of the montage, so one component

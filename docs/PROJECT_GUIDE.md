@@ -43,12 +43,17 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   no theta rhythm → ln(1+x). Features still skewed after transform use a percentile z (ADR-010). The first out-of-range rule jumped
   2.05 → 3.85 at the reference max → replaced by a continuous extension. Reference recordings now need ≥ 6 clean epochs.
 - P4b: score() needs the preset too (ADR-011). Review caught a composite of 100 built from signal quality alone → now None.
+- P5: concatenated rest blocks gave 1 epoch per session (one epoch grid across joins) → grid restarts per block (ADR-012); boundary marks
+  then still dropped 4/15 epochs (BUG-002). S060's between-task rest was too noisy (0–5/15 epochs kept) → demo subject S051, chosen by a
+  fixed screening rule.
 
 ## 6. Current results
 - Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings
   skipped for 0 clean epochs at first; with the ≥ 6-epoch rule 27 of 200 (frontal8 eyes-open 10/50).
 - Score (P4b), held-out S060, frontal8: eyes-open run vs eyes-open reference 86.3 (confidence 0.93); eyes-closed run 84.1 vs eyes-open,
   89.4 vs eyes-closed. muse4: 84.2 / 83.7 / 86.5. Full breakdown in DEVLOG 2026-11-27 21:26.
+- Longitudinal demo (P5), S051, 13 sessions: composites 79.8–87.0, confidence 0.87–0.99, baseline 84.2 ± 2.5, posterior 84.3 ± 1.5,
+  no flags (max 1.74 SD).
 
 ## 7. Limitations
 - Reference = 50 healthy US adults from one public dataset; typicality is relative to them only.

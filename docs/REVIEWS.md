@@ -96,3 +96,24 @@ Unused loggers → used (fb264e3). Remaining: EO/EC separation by the composite 
 Diff: 16 files, +2027. Contracts changed: load_reference(condition, preset) (ADR-010), score(…, preset) (ADR-011), CLAUDE.md §6 synced.
 Checked: no prints in src/, no absolute paths, all constants in config, holdout/demo leak guard raises under -O, suite 72 passed.
 Author check: owner only. Remaining for P5/P7: callers must pass preset and qc["duration_s"].
+
+## src/preprocess.py (ADR-012 + BUG-002) — 2026-11-27 — FIXED → PASS
+Tried to break: continuous file event equality; 3 synthetic segments 4.1/9.0/4.1 s; real concatenated T0 after FIF round trip; epochs crossing joins.
+Found: boundary marks rejected 4/15 epochs after FIF round trip (BUG-002, 0b520a8). First regression test passed on the old code (in-memory
+only) → rewritten through FIF; verified it fails on 6ebb2ae (n_total 11) and passes now. Reference rebuild unchanged.
+
+## src/longitudinal.py — 2026-11-27 — PASS
+Tried to break: None in scores; length mismatch; empty list; constant baseline (std 0 → floor 2.0); a wild baseline session; confidence 0 and 1.
+Checked: 7 hand-computed tests. Remaining: inputs must be pre-filtered for None (documented).
+
+## src/db.py — 2026-11-27 — PASS
+Tried to break: NaN, ±inf, None, numpy bool/int/array inside nested dicts; None composite; out-of-order inserts; unknown subject.
+Checked: 3 tests in tmp_path; demo DB seeded with 13 rows. Remaining: no schema migration (single table, fine for the prototype).
+
+## scripts/build_demo_sessions.py — 2026-11-27 — PASS
+Tried to break: boundary crossings (asserted 0 in all 13); T1/T2 fragments in cropped blocks (removed); re-running (DB rows deleted first).
+Checked: output matches the independent screening run exactly (13 composites). No S060 files committed (grep: 13 S051, 0 S060).
+
+## P5 phase PR review (c74ac45..HEAD) — 2026-11-27 — PASS
+Diff: preprocess epoching, longitudinal, db, demo builder, --demo download, S051 guard, data/demo, reference metadata. Contracts unchanged
+except additive (`db_path`, qc `n_segments`). All score() callers pass preset and qc["duration_s"] (grep). Suite 85 passed. Author: owner only.
