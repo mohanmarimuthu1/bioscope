@@ -134,12 +134,18 @@ def test_concatenated_segments_epoch_per_segment_without_crossing():
     assert qc["n_segments"] == 3 and qc["n_total"] == 5
 
 
-DEMO_S02 = config.DATA_DEMO / "S060_s02_R03_raw.fif"
+S060_R03 = config.DATA_RAW / "S060" / "S060R03.edf"
 
 
-@pytest.mark.skipif(not DEMO_S02.exists(), reason="demo files not built")
-def test_boundary_marks_do_not_reject_valid_epochs():
-    """BUG-002: zero-length boundary marks at a segment's first sample dropped 4/15 epochs on S060 R03."""
-    raw = load_eeg(str(DEMO_S02), "frontal8")[0]
-    _, qc = clean(raw, config.DATASET_LINE_FREQ)
+@pytest.mark.skipif(not S060_R03.exists(), reason="raw S060 not downloaded")
+def test_boundary_marks_do_not_reject_valid_epochs(tmp_path):
+    """BUG-002: after a FIF round trip, zero-length boundary marks at a segment's first sample dropped 4/15
+    epochs on S060 R03 (the in-memory concatenation alone does not trigger it)."""
+    import importlib.util
+    spec = importlib.util.spec_from_file_location("bds", config.ROOT / "scripts" / "build_demo_sessions.py")
+    bds = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(bds)
+    path = tmp_path / "s060_r03_t0_raw.fif"
+    bds._t0_session("R03", subject="S060").save(path, fmt="single", verbose="ERROR")
+    _, qc = clean(load_eeg(str(path), "frontal8")[0], config.DATASET_LINE_FREQ)
     assert qc["n_segments"] == 15 and qc["n_total"] == 15
