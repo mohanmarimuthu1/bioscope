@@ -40,6 +40,20 @@ Remaining: sklearn FastICA ConvergenceWarning seen once in 40 runs (not surfaced
 ## tests/test_preprocess.py — 2026-11-27 — PASS
 Tried to break: forced ICA failure via monkeypatch; threshold not really read from config (monkeypatched to 1 µV → 0 kept). Checked: 32 passed.
 
+## src/features.py — 2026-11-27 — FIXED (2 spec issues) → PASS
+Tried to break: missing µV conversion (test: alpha_abs 24.4 µV² on sample; ~1e-11 without); flat channel; 0 epochs; pure 1/f; slope change; theta near alpha; zero beta rhythm; failed FOOOF.
+Checked: 43 tests; 20 real recordings × 2 presets (PAF, fallback, EC>EO, NaN counts, timing ≤ 1.43 s).
+Found: PAF window caught theta (ADR-009); ratio osc slope-sensitive (ADR-008); FOOOF spurious peaks in 60 s noise at min_peak_height 0.1 (spec value kept; test uses 300 s).
+Remaining: alpha_exc can be exactly 0 (3/10 EO) → P4 decision; per-epoch rows share the session 1/f fit (ADR-007).
+
+## tests/test_features.py — 2026-11-27 — PASS
+Tried to break: guard only testable via monkeypatch → added a direct unit test too; FAA test relies on gains on rhythm only (background symmetric). Checked: 43 passed.
+
+## PR review — P3 features (5cb0403..HEAD) — 2026-11-27 — PASS
+Tried to break: tunes hidden in the feat commit (no: spec 131393e → tunes d3606d8, fbfb3f1 with numbers); holdout commit mixed in (separate 211ca89); leftover probe scripts in repo (kept in E:\hackathon\_work, outside).
+Checked: files touched src/features.py, src/config.py, tests/test_features.py, scripts/download_data.py + docs; owner-only; clean-clone run below.
+Gate: pytest green; S060 EC > EO alpha_exc (21.20 vs 3.55) and alpha_osc; ADR-006 muse4 contrast preserved 9/10; timing 0.45 s/file.
+
 ## PR review — P2 preprocess (f0cb096..HEAD) — 2026-11-27 — PASS
 Tried to break: history hiding the tune (no — spec ICA 896654c, then tune df12993 with before→after in body); stray files; red commits.
 Checked: 4 code/test commits (c83c8bf, 896654c, df12993, 5c30406, f2d707b) + docs; only src/preprocess.py, src/config.py, tests/test_preprocess.py touched; owner-only authors; gate table below.

@@ -3,7 +3,25 @@
 Short answers, backed by our own numbers. Target ≥ 25 by P8.
 
 ## Science
-*(P3)*
+**Q: Why FOOOF?**
+A: An EEG spectrum = 1/f background + rhythms. Classic band power mixes both, so a background tilt looks like a rhythm change.
+FOOOF fits the background separately; we then measure power *above* it. In our synthetic test a pure slope change moved classic TBR by
+|Δlog| 0.16–0.58 and our TBR by 0.01–0.03 (ADR-008).
+
+**Q: Why are there two TBRs?**
+A: `tbr_classic` = theta/beta power (what most papers report) and `tbr_osc` = theta/beta *rhythm power above 1/f* (what we score).
+We show both so you can see how much of the classic value is background. S060 eyes-open: classic 0.66, rhythm-based 0.68.
+
+**Q: Didn't you plan a "mean PSD/aperiodic" ratio?**
+A: Yes, and we tested it: it moved *more* than classic power under a pure slope change (1.04 vs 0.16 for TBR), so we replaced it (ADR-008).
+
+**Q: Why is frontal alpha often missing with eyes open?**
+A: Alpha is strongest over the back of the head and is suppressed when the eyes are open. In our reference subset 74% of frontal channels
+had no FOOOF alpha peak with eyes open versus 23% with eyes closed (muse4: 55% vs 17%). When no peak is found we use the spectral centre
+of gravity (7–13 Hz) and show the fallback share beside PAF. EO PAF still averages 9.88 Hz.
+
+**Q: How did you choose the PAF window?**
+A: 7–14 Hz picked up frontal theta peaks at ~7 Hz (2/10 eyes-open recordings below 8 Hz). 8–13 Hz (the alpha band) fixed it: 0/10, mean 9.88 Hz (ADR-009).
 
 ## Methodology
 **Q: Why PhysioNet EEGMMI?**

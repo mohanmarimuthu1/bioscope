@@ -94,6 +94,36 @@ ICA (n_ch − 1 comps, seed 42; drop components with |r| ≥ 0.7 to the preset's
 |---|---|---|---|
 | 2026-11-27 | f2d707b | Created | suite 32 passed |
 
+## src/features.py
+**Purpose:** Turn clean epochs into the session features the score uses, plus a per-epoch table for ML.
+**Inputs → outputs:** `extract(epochs, preset)` → `(feats, per_epoch)`; `session_spectrum(epochs)` → `{freqs, psd_uv2, ap_fit_uv2, ch_names}` for the UI plot.
+**Steps in plain English:**
+1. Welch PSD of every epoch (2 s segments, 1 s overlap → 3 per epoch, 0.5 Hz bins, 1–40 Hz); ×1e12 to µV²/Hz.
+2. Average epochs → one spectrum per channel → FOOOF splits it into a straight line in log-log (the 1/f "aperiodic" background: offset, exponent) plus Gaussian peaks (rhythms).
+3. PAF: the strongest peak between 8 and 13 Hz; if a channel has none, the spectrum's centre of gravity over 7–13 Hz.
+4. For each band: `abs` = area under the spectrum; `exc` = area *above the 1/f line* (the rhythm itself); `osc` = average height relative to the line (display/ML).
+5. tbr_classic = theta_abs/beta_abs; tbr_osc = theta_exc/beta_exc (NaN if beta has < 5% excess); faa = ln(right alpha) − ln(left alpha); sample entropy.
+6. Median across channels (a channel with a failed or poor fit is ignored and warned about).
+7. Per epoch: same band features using the channel's *session* 1/f line (ADR-007); PAF by centre of gravity.
+**Why:** a broadband slope change (age, arousal, reference) moves classic power and the ratio; excess power isolates the rhythm (ADR-008 table).
+**Key parameters:** `PAF_PEAK_RANGE` (8–13), `FOOOF_SETTINGS`, `FOOOF_MIN_R2` 0.5, `TBR_MIN_BETA_EXC_FRAC` 0.05.
+**Real numbers:** S060 frontal8 EO/EC: PAF 10.85/9.94 Hz, alpha_exc 3.55/21.20 µV², tbr_osc 0.68/1.04, r² 0.974/0.981. 20 reference recordings: see DEVLOG 21:40.
+**Connections:** preprocess.clean → **extract** → scoring.score / ml_sanity; session_spectrum → Session page.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 131393e | Created per §7.5 | S060 EO PAF 7.13 Hz (theta) |
+| 2026-11-27 | d3606d8 | PAF 8–13 Hz | EO PAF mean 9.20 → 9.88 Hz |
+| 2026-11-27 | fbfb3f1 | excess power | TBR slope |Δlog| 0.68–1.04 → 0.01–0.03 |
+
+## tests/test_features.py
+12 tests: PAF 10 Hz ±0.5 with no fallback; excess TBR |Δlog| < 0.1 at 2 and 6 µV; FAA sign; 300 s pure 1/f → fallback; flat channel → warning + finite median; no-beta guard (direct + through extract); 0 epochs → NaN + flag; sample µV² range; session_spectrum shapes.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | 7a7d53d | Created | suite 43 passed |
+
+## scripts/download_data.py — update
+`--holdout` (commit 211ca89): S061–S109 R01/R02, 98 files, all 160 Hz.
+
 ## data/sample/sample_frontal8_raw.fif
 **Purpose:** a committed, real recording for tests and the README demo when raw data is not downloaded.
 **What it is:** S060 R01 (eyes open), frontal8, full 61 s (9760 samples, 160 Hz), float32, 314,808 bytes, annotations kept.

@@ -100,6 +100,45 @@ Went well: one label rule covers all 64 EEGMMI names; clean-clone run proved tes
 Broke + fix: assumed 9,600-sample length was wrong (9,760) → gate now data-driven; hook blocked a commit body wording → reworded.
 Next: P2 preprocess — watch ICA on Windows and the 150 µV retention on unfiltered ~100 µV signals.
 
+### 2026-11-27 21:00 — Holdout download  (commit 211ca89)
+Type: feature
+Change: `download_data.py --holdout` → S061–S109 R01/R02. Result: 98/98, rerun 98 skipped, total raw 272.5 MB (E:).
+TODO(verify) resolved: I expected S088/S092/S100 at 128 Hz — **wrong**: all 98 files are 160 Hz (95 × 61.0 s, 3 × 60.0 s).
+Files: scripts/download_data.py
+
+### 2026-11-27 21:10 — features as specified  (commit 131393e)
+Type: feature
+Change: §7.5 features + per-epoch table (ADR-007). Timing: preprocess + extract 0.2–1.7 s per 61 s file (gate < 10 s ✓).
+Findings: frontal8 EO PAF 7.13 Hz (theta caught); tbr_osc ratio less robust than classic; pure-1/f test found spurious FOOOF peaks (60 s noise ≈ 0.05 log units vs min_peak_height 0.1).
+Files: src/features.py, src/config.py
+
+### 2026-11-27 21:30 — tune: PAF search 8–13 Hz  (commit d3606d8)
+Type: tuning — ADR-009
+Before → After (frontal8, 20 recordings): EO PAF mean 9.20 → 9.88 Hz, sd 1.53 → 1.08, EO < 8 Hz 2/10 → 0/10; EC 9.85 → 9.87 Hz.
+
+### 2026-11-27 21:40 — tune: excess power for TBR, alpha, high beta  (commit fbfb3f1)
+Type: tuning — ADR-008
+Before → After (synthetic slope change, |Δlog|): TBR 0.68–1.04 (ratio) → 0.01–0.03 (excess); through `extract` 0.064–0.071.
+S060 frontal8 tbr_osc EO/EC 1.012/1.142 → 0.68/1.04. Score features alpha_osc → alpha_exc, hibeta_osc → hibeta_exc.
+Real data after both tunes (S001–S010 + S060, S009 insufficient):
+| preset | EO PAF | EC PAF | EO fallback | **EC fallback** | EC > EO alpha (exc / osc) | tbr NaN | s/file |
+|---|---|---|---|---|---|---|---|
+| frontal8 | 9.88 ± 1.08 | 9.87 ± 0.53 | 0.74 | **0.23** | 9/10 / 9/10 | 0 | 0.45 |
+| muse4 | 10.51 ± 1.11 | 10.25 ± 0.58 | 0.55 | **0.17** | 9/10 / 9/10 | 0 | 0.20 |
+EO fallback ≫ EC fallback = alpha appears when eyes close → physiological, accepted (Q3). frontal8 EO alpha_exc exactly 0 in 3/10 → P4 question.
+Files: src/features.py, src/config.py, tests/test_features.py (7a7d53d)
+
+### 2026-11-27 21:50 — CLAUDE.md §7.5/§7.6/§15 amended (diff shown to owner)
+§7.5: PAF 8–13 Hz + session-PAF rule; `_exc` row; `_osc` display-only; tbr_osc = theta_exc/beta_exc + guard; FOOOF-failure nanmedian; per-epoch rule (ADR-007).
+§7.6: sanity uses alpha_exc; skip insufficient_data; ln(tbr); Attention from paf when tbr_osc NaN; dimensions alpha_exc/hibeta_exc; named_metrics + paf_fallback_frac, hibeta_exc.
+§15: pitch anchor 1 reworded.
+
+### 2026-11-27 21:55 — P3 retro
+Type: retro
+Went well: probes on synthetic data with known ground truth caught two spec errors (theta-as-PAF, slope-sensitive ratio TBR) before they reached the score.
+Broke + fix: ratio "osc" was less robust than classic → excess power (ADR-008); 7–14 Hz PAF caught theta → 8–13 Hz (ADR-009); my 128 Hz recollection was wrong (verified 160 Hz).
+Next: P4 — decide zero/skew handling for alpha_exc & hibeta_exc before building the reference; skip S009.
+
 ### 2026-11-27 20:40 — P2 retro
 Type: retro
 Went well: audit-first caught a spec bug (z ≥ 3 unreachable with 7 comps) with numbers before any feature code; every option was evaluated on the same 20 files.

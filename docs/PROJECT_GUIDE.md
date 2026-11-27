@@ -8,7 +8,13 @@ with longitudinal tracking. BioScope gives one 0–100 *typicality* score versus
 decomposed into dimensions → features → z-scores → signal, plus a tracker across sessions.
 
 ## 2. EEG basics needed
-*(P3)*
+- **EEG** measures tiny voltages (µV) on the scalp from many neurons firing together. Frontal sites (Fp, AF, F) sit near the eyes, so blinks are huge there.
+- **Rhythms** are named by frequency: theta 4–8 Hz, alpha 8–13 Hz (strongest with eyes closed), beta 13–30 Hz, high beta 20–30 Hz.
+- **Spectrum (PSD):** how much power at each frequency. Plotted on log-log axes it is roughly a straight falling line (the **1/f background**) with bumps (the **rhythms**).
+- **FOOOF** fits that line (offset = height, exponent = steepness) and the bumps (centre frequency, height, width) separately.
+- **Why it matters:** if the line tilts (age, arousal, reference), classic band power changes even when no rhythm changed. Power *above the line* ("excess") measures the rhythm itself (ADR-008).
+- **PAF** = frequency of the alpha bump (~10 Hz in adults). **TBR** = theta/beta. **FAA** = right vs left frontal alpha.
+- Eyes open often shows *no* frontal alpha bump (74% of frontal channels in our data) — eyes closed brings it back (23%).
 
 ## 3. End-to-end walkthrough of one real recording
 *(P4, with real numbers at every stage)*
@@ -21,6 +27,7 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 | src/io_utils.py | Opens EDF/FIF, fixes channel names, keeps only the preset's channels |
 | data/sample/sample_frontal8_raw.fif | 61 s real recording for tests/demo without downloading |
 | src/preprocess.py | Filters, removes blinks with ICA, cuts 4 s epochs, drops noisy ones |
+| src/features.py | Spectrum → FOOOF → PAF, band powers (abs/excess/ratio), TBR, FAA, entropy |
 
 ## 5. How the algorithm evolved
 - P0: Welch segment kept at 2 s (0.5 Hz bins) rather than 4 s, for lower-variance spectra (ADR-003).
@@ -28,6 +35,9 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 - P2: blinks dominated frontal eyes-open data (Fp1 p2p ≈ 330 µV). The specified ICA rule (z ≥ 3) could never fire with 7 components
   (max z ≈ 2.45), so nothing was removed and only 12% of epochs survived. Switching to correlation |r| ≥ 0.7 with the frontopolar
   channels and a 200 µV threshold raised retention to 97% (ADR-005). muse4 got a 3-component ICA: 57% → 100% (ADR-006).
+- P3: (1) PAF search 7–14 Hz picked frontal theta (7.1 Hz) → 8–13 Hz: eyes-open PAF mean 9.20 → 9.88 Hz (ADR-009).
+  (2) The specified "oscillatory ratio" moved *more* than classic power when only the 1/f slope changed → switched TBR, alpha and high beta
+  to excess power above the line: slope sensitivity of TBR 0.68–1.04 → 0.01–0.03 (ADR-008).
 
 ## 6. Current results
 *(P4 onward)*

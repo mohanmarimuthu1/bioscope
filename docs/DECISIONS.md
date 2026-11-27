@@ -58,3 +58,35 @@ Audit (S001–S010 × R01/R02, frontal8): 0 components excluded in 20/20 files; 
 **Decision:** keep option 1; muse4 gate = EO median ≥ 50% → PASS.
 **Consequence / risk:** with 3 components and AF7/AF8 being half the montage, the removed component may also carry real frontal activity (removed in every EC file too, |r| 0.74–0.99).
 Check in P3: muse4 must still show EC alpha_osc > EO; if the contrast collapses, revisit with the owner.
+**P3 result:** contrast preserved — EC > EO alpha in 9/10 subjects (S001–S010, S009 excluded), median EC−EO alpha_exc +31.6 µV², alpha_osc +2.17.
+
+## ADR-007 — Per-epoch features reuse the session aperiodic fit (2026-11-27)
+**Context:** The ML table needs per-epoch features. A 4 s epoch has only three 2 s Welch segments, so its spectrum is noisy.
+**Options:** (a) FOOOF per epoch per channel; (b) FOOOF once per channel on the session spectrum, reused for every epoch.
+**Measured (sample S060 R01, 27 epochs × 8 ch):** (a) 216 fits in 1.45 s, median r² 0.762, 8% of fits r² < 0.5; (b) whole `extract` 0.27 s, session r² 0.97.
+**Decision:** (b) (owner). Per-epoch `{band}_osc/_exc` = epoch PSD vs the channel's session aperiodic fit; per-epoch PAF = centre of gravity 7–13 Hz; `ap_exponent/ap_offset` session-only.
+**Consequence:** Speed was not the binding constraint (1.45 s); fit quality was. Per-epoch rows share the session 1/f model, so within-session aperiodic changes are not tracked per epoch.
+
+## ADR-008 — Excess power above 1/f for TBR, alpha and high beta (2026-11-27)
+**Context:** §7.5 defined `{band}_osc = mean(PSD/aperiodic)`. Synthetic probe (8 ch, 1/f slope 1 → 2, rhythms fixed; |Δlog| = movement, smaller = more robust):
+| Feature | Rhythm µV | classic abs | ratio osc | **excess** |
+|---|---|---|---|---|
+| TBR (θ 6 Hz, β 20 Hz) | 1 / 2 / 4 / 6 | 0.58 / 0.34 / 0.21 / 0.16 | 0.68 / 0.88 / 0.99 / 1.04 | **0.03 / 0.03 / 0.02 / 0.01** |
+| alpha (10 Hz) | 2 / 4 / 8 / 15 | 2.28 / 1.20 / 0.44 / 0.13 | 2.39 / 3.52 / 4.30 / 4.64 | **0.62 / 0.16 / 0.02 / 0.01** |
+| high beta (25 Hz) | 2 / 4 / 8 / 15 | 2.16 / 1.07 / 0.39 / 0.13 | 3.46 / 4.59 / 5.32 / 5.61 | **0.64 / 0.16 / 0.04 / 0.01** |
+The ratio is a rhythm-to-background ratio, so it tilts with the background — worse than classic in every row.
+**Decision (owner):** `{band}_exc = ∫ max(PSD − aperiodic, 0)` (µV²). `tbr_osc = theta_exc/beta_exc`, NaN + warning if beta_exc < 5% of beta_abs.
+By the owner's rule (switch if ratio moves ≥ abs), alpha and high beta also switch: the score uses `alpha_exc`, `hibeta_exc`. Ratio `_osc` kept for display/ML.
+Reference/z use ln(tbr). Pitch anchor 1 reworded. Regression test: |Δlog tbr_osc| < 0.1 (measured 0.064–0.071 through `extract`).
+**Consequence:** excess is µV² (subject-scale dependent), right-skewed, and can be exactly 0 (frontal8 EO alpha_exc = 0 in 3/10) → handling decided in P4.
+
+## ADR-009 — PAF peak search 8–13 Hz (2026-11-27)
+**Context:** §7.5 searched 7–14 Hz. S060 R01 frontal channels show theta peaks at 6.0–7.5 Hz, stronger than alpha (10.8–11.2 Hz), so 7.1 Hz was picked.
+| Peak range | EO PAF mean ± sd | EO min | EO < 8 Hz | EC PAF mean ± sd |
+|---|---|---|---|---|
+| 7–14 Hz | 9.20 ± 1.53 | 7.05 | 2/10 | 9.85 ± 0.52 |
+| **8–13 Hz** | **9.88 ± 1.08** | 8.27 | **0/10** | 9.87 ± 0.53 |
+| 7.5–13.5 Hz | 9.88 ± 1.08 | 8.27 | 0/10 | 9.85 ± 0.52 |
+(frontal8, S001–S010 + S060, 20 usable recordings.)
+**Decision (owner):** 8–13 Hz peak search; centre-of-gravity fallback stays 7–13 Hz.
+**Consequence:** PAF window = alpha band; a genuine slow alpha below 8 Hz would be reported via the fallback.
