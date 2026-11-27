@@ -28,8 +28,11 @@ BACKOFF_S = 2.0
 TIMEOUT_S = 60
 
 
-def wanted_files(holdout: bool = False) -> list[tuple[str, str]]:
-    """Return (subject, run) pairs: reference R01/R02 + demo runs, or the holdout R01/R02."""
+def wanted_files(holdout: bool = False, demo: bool = False) -> list[tuple[str, str]]:
+    """Return (subject, run) pairs: reference R01/R02 + S060 runs (default), the holdout R01/R02,
+    or the longitudinal demo subject's R01 + R03–R14 (only needed to rebuild data/demo/)."""
+    if demo:
+        return [(config.DEMO_LONGITUDINAL_SUBJECT, r) for r in config.DEMO_RUNS if r != "R02"]
     if holdout:
         return [(s, r) for s in config.HOLDOUT_SUBJECTS for r in config.REFERENCE_RUNS.values()]
     ref = [(s, r) for s in config.REFERENCE_SUBJECTS for r in config.REFERENCE_RUNS.values()]
@@ -63,10 +66,13 @@ def fetch(subject: str, run: str, dest_dir: Path) -> str:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
-    parser.add_argument("--holdout", action="store_true", help="fetch S061–S109 R01/R02 only")
+    group = parser.add_mutually_exclusive_group()
+    group.add_argument("--holdout", action="store_true", help="fetch S061–S109 R01/R02 only")
+    group.add_argument("--demo", action="store_true",
+                       help=f"fetch {config.DEMO_LONGITUDINAL_SUBJECT} R01 + R03–R14 only (to rebuild data/demo/)")
     args = parser.parse_args()
     counts = {"skipped": 0, "downloaded": 0, "failed": 0}
-    files = wanted_files(args.holdout)
+    files = wanted_files(args.holdout, args.demo)
     print(f"Fetching {len(files)} files into {config.DATA_RAW}")
     for i, (subject, run) in enumerate(files, 1):
         status = fetch(subject, run, config.DATA_RAW)
