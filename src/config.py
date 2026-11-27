@@ -89,13 +89,14 @@ BANDS = {                                 # Hz, half-open [lo, hi)
     "hibeta": (20.0, 30.0),
 }
 V2_TO_UV2 = 1e12                          # V^2/Hz -> µV^2/Hz
+TBR_MIN_BETA_EXC_FRAC = 0.05              # ADR-008: beta_exc < 5% of beta_abs -> no beta rhythm, tbr_osc = NaN
 
 # --------------------------------------------------------------------------- scoring
 Z_PENALTY = 15.0                          # s = clip(100 - 15*|z|, 0, 100) (design choice)
 DIMENSIONS = {                            # feature lists per dimension (CLAUDE.md §7.6)
     "attention": ["tbr_osc", "paf"],
-    "relaxation": ["alpha_osc", "faa"],
-    "load": ["hibeta_osc", "ap_exponent"],
+    "relaxation": ["alpha_exc", "faa"],      # ADR-008: excess power, robust to 1/f slope
+    "load": ["hibeta_exc", "ap_exponent"],   # ADR-008
 }
 WEIGHTS = {                               # design choice; tested in sensitivity analysis
     "attention": 0.30,

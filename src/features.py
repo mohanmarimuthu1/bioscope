@@ -8,8 +8,10 @@ STEPS (session level, per channel, then median across channels):
   1. Welch PSD per epoch (2 s segments, 50% overlap, 1–40 Hz), V²/Hz → µV²/Hz.
   2. Mean PSD over kept epochs → FOOOF (fixed aperiodic) → ap_exponent, ap_offset, fooof_r2, peaks.
   3. paf = strongest FOOOF peak in 7–14 Hz; else centre of gravity over 7–13 Hz (fallback).
-  4. {band}_abs = ∫PSD (µV²); {band}_osc = mean(PSD / aperiodic fit) over the band.
-  5. tbr_classic, tbr_osc; faa = ln(mean α right) − ln(mean α left); samp_entropy.
+  4. {band}_abs = ∫PSD (µV²); {band}_osc = mean(PSD / aperiodic fit) (ratio, display/ML);
+     {band}_exc = ∫max(PSD − aperiodic, 0) (µV², power above 1/f; used in the score, ADR-008).
+  5. tbr_classic = theta_abs/beta_abs; tbr_osc = theta_exc/beta_exc (NaN + warning if
+     beta_exc < 5% of beta_abs); faa = ln(mean α right) − ln(mean α left); samp_entropy.
 PER-EPOCH (ADR-007): no per-epoch FOOOF. Each epoch's PSD is divided by its channel's
   *session* aperiodic fit; per-epoch PAF = centre of gravity 7–13 Hz; ap_* are session-only.
 CAVEATS:
@@ -36,13 +38,14 @@ log = logging.getLogger(__name__)
 BAND_NAMES = list(config.BANDS)
 SESSION_KEYS = (
     ["ap_exponent", "ap_offset", "fooof_r2", "paf", "paf_fallback", "paf_fallback_frac"]
-    + [f"{b}_abs" for b in BAND_NAMES] + [f"{b}_osc" for b in BAND_NAMES]
+    + [f"{b}_{t}" for b in BAND_NAMES for t in ("abs", "osc", "exc")]
     + ["tbr_classic", "tbr_osc", "faa", "samp_entropy"]
 )
 EPOCH_COLUMNS = (
-    ["epoch"] + [f"{b}_abs" for b in BAND_NAMES] + [f"{b}_osc" for b in BAND_NAMES]
+    ["epoch"] + [f"{b}_{t}" for b in BAND_NAMES for t in ("abs", "osc", "exc")]
     + ["tbr_classic", "tbr_osc", "paf", "faa", "samp_entropy"]
 )
+NO_BETA_WARNING = "no beta rhythm above background"
 
 
 # --------------------------------------------------------------------------- spectra
@@ -95,14 +98,24 @@ def _fit_channel(freqs: np.ndarray, psd: np.ndarray) -> dict:
 
 
 def _band_features(freqs: np.ndarray, psd: np.ndarray, ap_log: np.ndarray) -> dict:
-    """abs (∫PSD) and osc (mean PSD/aperiodic) per band for one channel spectrum."""
+    """Per band for one channel spectrum:
+    abs = ∫PSD (µV²); osc = mean(PSD / aperiodic) (ratio, display/ML only);
+    exc = ∫max(PSD − aperiodic, 0) (µV², power above the 1/f line — ADR-008)."""
     out = {}
     ap_lin = 10.0 ** ap_log
     for name, band in config.BANDS.items():
         m = _band_mask(freqs, band)
         out[f"{name}_abs"] = float(np.trapezoid(psd[m], freqs[m]))
         out[f"{name}_osc"] = float(np.mean(psd[m] / ap_lin[m]))
+        out[f"{name}_exc"] = float(np.trapezoid(np.clip(psd[m] - ap_lin[m], 0, None), freqs[m]))
     return out
+
+
+def _tbr_osc(theta_exc: float, beta_exc: float, beta_abs: float) -> float:
+    """theta_exc / beta_exc; NaN when beta_exc < TBR_MIN_BETA_EXC_FRAC · beta_abs (no beta rhythm)."""
+    if not (np.isfinite(beta_exc) and np.isfinite(beta_abs)) or beta_exc < config.TBR_MIN_BETA_EXC_FRAC * beta_abs:
+        return np.nan
+    return _ratio(theta_exc, beta_exc)
 
 
 def _ratio(num: float, den: float) -> float:
@@ -169,14 +182,16 @@ def extract(epochs: mne.Epochs, preset: str) -> tuple[dict, pd.DataFrame]:
     ch_df = pd.DataFrame(rows, index=ch_names)
 
     feats: dict = {}
-    for k in ["ap_exponent", "ap_offset", "fooof_r2"] + [f"{b}_{t}" for b in BAND_NAMES for t in ("abs", "osc")]:
+    for k in ["ap_exponent", "ap_offset", "fooof_r2"] + [f"{b}_{t}" for b in BAND_NAMES for t in ("abs", "osc", "exc")]:
         feats[k] = float(np.nanmedian(ch_df[k])) if ch_df[k].notna().any() else np.nan
     real = ch_df["peak_cf"].dropna()
     feats["paf"] = float(real.median()) if len(real) else float(np.nanmedian(ch_df["cog"]))
     feats["paf_fallback_frac"] = float(ch_df["fallback"].mean())
     feats["paf_fallback"] = feats["paf_fallback_frac"] > 0.5
     feats["tbr_classic"] = _ratio(feats["theta_abs"], feats["beta_abs"])
-    feats["tbr_osc"] = _ratio(feats["theta_osc"], feats["beta_osc"])
+    feats["tbr_osc"] = _tbr_osc(feats["theta_exc"], feats["beta_exc"], feats["beta_abs"])
+    if not np.isfinite(feats["tbr_osc"]) and np.isfinite(feats["beta_abs"]):
+        warnings.append(NO_BETA_WARNING)
     feats["faa"] = _faa(ch_df["alpha_abs"].to_numpy(), ch_names, preset)
 
     # ---- per epoch (ADR-007: session aperiodic fit reused, no per-epoch FOOOF)
@@ -191,7 +206,7 @@ def extract(epochs: mne.Epochs, preset: str) -> tuple[dict, pd.DataFrame]:
         for col in ep_df.columns:
             row[col] = float(np.nanmedian(ep_df[col])) if ep_df[col].notna().any() else np.nan
         row["tbr_classic"] = _ratio(row["theta_abs"], row["beta_abs"])
-        row["tbr_osc"] = _ratio(row["theta_osc"], row["beta_osc"])
+        row["tbr_osc"] = _tbr_osc(row["theta_exc"], row["beta_exc"], row["beta_abs"])
         row["paf"] = float(np.nanmedian([_cog(freqs, psd_ep[e, i]) for i in range(len(ch_names))]))
         row["faa"] = _faa(ep_df["alpha_abs"].to_numpy(), ch_names, preset)
         row["samp_entropy"] = float(np.nanmedian(ent))
