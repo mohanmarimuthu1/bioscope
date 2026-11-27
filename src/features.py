@@ -7,7 +7,7 @@ WHY:   FOOOF separates oscillations from the 1/f background, so TBR, PAF and hig
 STEPS (session level, per channel, then median across channels):
   1. Welch PSD per epoch (2 s segments, 50% overlap, 1–40 Hz), V²/Hz → µV²/Hz.
   2. Mean PSD over kept epochs → FOOOF (fixed aperiodic) → ap_exponent, ap_offset, fooof_r2, peaks.
-  3. paf = strongest FOOOF peak in 7–14 Hz; else centre of gravity over 7–13 Hz (fallback).
+  3. paf = strongest FOOOF peak in 8–13 Hz (ADR-009); else centre of gravity over 7–13 Hz (fallback).
   4. {band}_abs = ∫PSD (µV²); {band}_osc = mean(PSD / aperiodic fit) (ratio, display/ML);
      {band}_exc = ∫max(PSD − aperiodic, 0) (µV², power above 1/f; used in the score, ADR-008).
   5. tbr_classic = theta_abs/beta_abs; tbr_osc = theta_exc/beta_exc (NaN + warning if
