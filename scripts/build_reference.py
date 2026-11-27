@@ -1,7 +1,7 @@
 """Build models/reference.json from S001–S050 R01 (eyes open) / R02 (eyes closed).
 
 WHAT:  For each preset × condition: load → clean → extract every reference recording,
-       skip recordings with insufficient_data, then summarise each reference feature with
+       skip recordings with insufficient_data or n_kept < MIN_EPOCHS, then summarise each reference feature with
        src.reference.build_entry (ADR-010 transform, zscore or percentile method).
        Also writes models/reference_features.csv (one row per recording) for traceability.
 WHY:   Scores are typicality versus a condition- and preset-matched public reference.
@@ -50,6 +50,11 @@ def _extract_one(job: tuple[str, str, str]) -> dict:
     return row
 
 
+def _usable(g: pd.DataFrame) -> pd.Series:
+    """Reference inclusion: features computed and n_kept ≥ MIN_EPOCHS (same as the low-data warning)."""
+    return ~g.insufficient_data.astype(bool) & (g.n_kept >= config.MIN_EPOCHS)
+
+
 def build(df: pd.DataFrame) -> tuple[dict, list[str]]:
     """reference dict from the per-recording table, plus a list of failed sanity checks."""
     reference.assert_no_leak(df["subject"].unique().tolist())
@@ -58,19 +63,21 @@ def build(df: pd.DataFrame) -> tuple[dict, list[str]]:
         presets[preset] = {}
         for cond in config.CONDITIONS:
             g = df[(df.preset == preset) & (df.condition == cond)]
-            bad = g[g.insufficient_data.astype(bool)]
-            good = g[~g.insufficient_data.astype(bool)]
+            keep = _usable(g)
+            bad, good = g[~keep], g[keep]
             reference.assert_no_leak(good.subject.tolist())
             presets[preset][cond] = {
                 "subjects_used": sorted(good.subject),
-                "subjects_skipped": [{"subject": r.subject, "reason": f"insufficient_data ({r.n_kept}/{r.n_total} epochs kept)"}
+                "subjects_skipped": [{"subject": r.subject,
+                                      "reason": f"{r.n_kept}/{r.n_total} epochs kept (< {config.MIN_EPOCHS})"}
                                      for r in bad.itertuples()],
                 "features": {f: reference.build_entry(f, good[f].tolist()) for f in config.REFERENCE_TRANSFORMS},
             }
     failed = []
     print("\nSanity checks")
     for preset in config.PRESETS:
-        ok = df[(df.preset == preset) & ~df.insufficient_data.astype(bool)]
+        ok = df[(df.preset == preset)]
+        ok = ok[_usable(ok)]
         paf = ok[ok.condition == "eyes_open"].paf.mean()
         eo = ok[ok.condition == "eyes_open"].alpha_exc.mean()
         ec = ok[ok.condition == "eyes_closed"].alpha_exc.mean()

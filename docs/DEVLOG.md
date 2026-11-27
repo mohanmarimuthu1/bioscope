@@ -165,3 +165,15 @@ Why: rev 1 jumped 2.05 → 3.85 just above the max (≈ 27 feature-score points 
 Effect on calculations: only values outside a percentile cell's reference range; reference.json unchanged.
 Before → After (frontal8 EC hibeta_exc): max + ε 3.85 → 2.05; 311 µV² 4.00 → 3.26; 0 µV² −2.33 → −2.21; median 0.00 → 0.00.
 Files: src/reference.py, tests/test_reference.py (+ continuity/monotonicity test, 12 passed)
+
+### 2026-11-27 21:30 — Reference inclusion requires n_kept ≥ 6
+Type: tuning
+Change: build_reference keeps a recording only if features exist and n_kept ≥ MIN_EPOCHS (6, the low-data warning threshold).
+Why: a reference value from 1–5 epochs (4–12 s) is noisy; it should not define "typical".
+Effect on calculations: 15 more recordings dropped; 2 cells switch method; sanity still PASS.
+Before → After (n used of 50, EO/EC): frontal8 44/49 → 40/42; muse4 47/48 → 44/47.
+Newly dropped: frontal8 EO S018 S023 S043 S044; frontal8 EC S015 S017 S027 S028 S043 S048 S049; muse4 EO S017 S022 S044; muse4 EC S043.
+Methods: frontal8 EC hibeta_exc skew 1.43 → 0.76, percentile → zscore (the tail came from low-epoch recordings);
+muse4 EC hibeta_exc 0.96 → 1.02, zscore → percentile (borderline). Percentile cells still 5 of 28.
+Sanity: EO PAF mean 9.65 → 9.69 Hz (frontal8), 10.42 → 10.42 (muse4); alpha_exc EO→EC 1.41→3.93 (frontal8), 7.55→29.79 µV² (muse4).
+Files: scripts/build_reference.py, models/reference.json, models/reference_features.csv
