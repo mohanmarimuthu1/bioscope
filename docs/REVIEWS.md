@@ -31,6 +31,20 @@ Found: none. Remaining (KNOWN): other naming schemes fail with a clear missing-c
 Tried to break: run on a clean clone with no data/raw; magic-number shapes.
 Checked: local 20 passed; clean clone (E:\hackathon\_cleanclone, deleted after) 17 passed + 3 skipped; gate asserts use source n_times.
 
+## src/preprocess.py — 2026-11-27 — FIXED (spec bug) → PASS, KNOWN-ISSUE noted
+Tried to break: unit slip (checked EDF header: µV, 1:1); ICA that never fires; caller Raw mutated; ICA exception; unknown montage; all epochs rejected; < 4 s file; notch boundary.
+Checked: audit 20 files × 2 presets with retention, components removed, |r|, s/file, p2p percentiles.
+Found: z ≥ 3 unreachable with 7 comps (0 removed in 20/20) → ADR-005; muse4 without ICA 57% → ADR-006. Audit header "|z|" actually |r| (docs corrected).
+Remaining: sklearn FastICA ConvergenceWarning seen once in 40 runs (not surfaced in qc); muse4 removes 1 comp in every file — alpha-preservation check in P3; S009 0% retention.
+
+## tests/test_preprocess.py — 2026-11-27 — PASS
+Tried to break: forced ICA failure via monkeypatch; threshold not really read from config (monkeypatched to 1 µV → 0 kept). Checked: 32 passed.
+
+## PR review — P2 preprocess (f0cb096..HEAD) — 2026-11-27 — PASS
+Tried to break: history hiding the tune (no — spec ICA 896654c, then tune df12993 with before→after in body); stray files; red commits.
+Checked: 4 code/test commits (c83c8bf, 896654c, df12993, 5c30406, f2d707b) + docs; only src/preprocess.py, src/config.py, tests/test_preprocess.py touched; owner-only authors; gate table below.
+Gate: frontal8 EO 79% ≥ 70% ✓, EC 100% ≥ 70% ✓; muse4 EO 100% ≥ 50% ✓; mean s/file 0.73 / 0.11 < 10 ✓.
+
 ## PR review — P1 io_utils (0fd8742..HEAD) — 2026-11-27 — PASS
 Tried to break: commits that are red in isolation, stray files, hooks bypassed.
 Checked: order feat(io) → data(sample) → test(io) keeps every commit green; 4 files total (src/io_utils.py, data/sample/sample_frontal8_raw.fif, tests/test_io.py, pytest.ini) + docs; all commits by the owner; hooks ran on each commit (and blocked one message, see DEVLOG).

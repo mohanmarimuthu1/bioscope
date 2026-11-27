@@ -71,6 +71,29 @@ download to `.part` → rename on success → on error, delete the partial file,
 |---|---|---|---|
 | 2026-11-27 | 9e3fb7c | Created | 20 passed (local), 17 passed + 3 skipped (clean clone) |
 
+## src/preprocess.py
+**Purpose:** Turn a preset-picked Raw into clean 4 s epochs plus a QC dict.
+**Inputs → outputs:** `clean(raw, line_freq)` → `(epochs, qc)`; qc = n_total, n_kept, retained_frac, ica_used, ica_excluded, warnings + additive notch_applied, ica_eog_scores (|r| per component), epoch_ptp_uv.
+**Steps:** copy → average reference → FIR 1–45 Hz zero-phase → notch only if line_freq < 45 (50/60 Hz: skipped, the low-pass already removes them) →
+ICA (n_ch − 1 comps, seed 42; drop components with |r| ≥ 0.7 to the preset's EOG proxies, top-k by |r|: frontal8 Fp1/Fp2 k=2, muse4 AF7/AF8 k=1) →
+4 s epochs, 2 s step → drop epochs over 200 µV p2p → warnings (0 kept: "Insufficient clean data: 0/N epochs passed rejection"; < 50% or < 6 kept: low-data warning).
+**Why:** correlation, not z-score, because with 7 components a z-score can never reach 3 (ADR-005). Zero kept epochs return empty — never a fallback to unrejected data.
+**Key parameters:** `ICA_EOG_THRESHOLD` ↓ → more components removed (risk: brain signal); `REJECT_PTP_V` ↓ → fewer epochs kept.
+**Real numbers:** audit S001–S010 R01/R02 — frontal8 median 97% (EO 79%, EC 100%), muse4 100%; 0.73 / 0.11 s per file. S060R01 sample: 27/29 kept, component 0 removed.
+**Connections:** io_utils.load_eeg → **clean** → features.extract.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | c83c8bf | filter/epoch/reject | S060R01 0/29 kept @150 µV (blinks) |
+| 2026-11-27 | 896654c | ICA per spec (z ≥ 3) | 0 comps removed in 20/20; median 12% |
+| 2026-11-27 | df12993 | correlation ICA, 200 µV | frontal8 median 12% → 97% |
+| 2026-11-27 | 5c30406 | muse4 3-comp ICA | muse4 median 57% → 100% |
+
+## tests/test_preprocess.py
+12 tests: qc keys + retained_frac, 29 epochs from 61 s, frontal8 ICA (7 scores, ≤ 2 removed, each ≥ threshold), muse4 3-comp ICA, unknown montage → no ICA, caller raw untouched, 500 µV → 0 kept with exact warning, threshold read from config, < 4 s raises, notch at 30/50/60 Hz, forced ICA failure → warning + epochs.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-27 | f2d707b | Created | suite 32 passed |
+
 ## data/sample/sample_frontal8_raw.fif
 **Purpose:** a committed, real recording for tests and the README demo when raw data is not downloaded.
 **What it is:** S060 R01 (eyes open), frontal8, full 61 s (9760 samples, 160 Hz), float32, 314,808 bytes, annotations kept.

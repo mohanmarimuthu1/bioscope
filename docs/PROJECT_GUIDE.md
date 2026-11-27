@@ -20,10 +20,14 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 | scripts/download_data.py | Fetches the 114 PhysioNet files |
 | src/io_utils.py | Opens EDF/FIF, fixes channel names, keeps only the preset's channels |
 | data/sample/sample_frontal8_raw.fif | 61 s real recording for tests/demo without downloading |
+| src/preprocess.py | Filters, removes blinks with ICA, cuts 4 s epochs, drops noisy ones |
 
 ## 5. How the algorithm evolved
 - P0: Welch segment kept at 2 s (0.5 Hz bins) rather than 4 s, for lower-variance spectra (ADR-003).
 - P1: recordings are 61.0 s (9,760 samples), not the assumed 60 s; all checks now read the length from the file itself.
+- P2: blinks dominated frontal eyes-open data (Fp1 p2p ≈ 330 µV). The specified ICA rule (z ≥ 3) could never fire with 7 components
+  (max z ≈ 2.45), so nothing was removed and only 12% of epochs survived. Switching to correlation |r| ≥ 0.7 with the frontopolar
+  channels and a 200 µV threshold raised retention to 97% (ADR-005). muse4 got a 3-component ICA: 57% → 100% (ADR-006).
 
 ## 6. Current results
 *(P4 onward)*
