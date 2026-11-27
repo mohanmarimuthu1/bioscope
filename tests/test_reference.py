@@ -90,6 +90,9 @@ def test_leak_guard():
         reference.assert_no_leak(["S001", config.DEMO_SUBJECT])
     with pytest.raises(AssertionError):
         reference.assert_no_leak(["S061"])
+    with pytest.raises(AssertionError):
+        reference.assert_no_leak([config.DEMO_LONGITUDINAL_SUBJECT])
+    assert config.DEMO_LONGITUDINAL_SUBJECT not in config.REFERENCE_SUBJECTS + config.HOLDOUT_SUBJECTS
 
 
 # ---------------------------------------------------------------- built artefact

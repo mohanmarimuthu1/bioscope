@@ -29,6 +29,11 @@ REFERENCE_SUBJECTS = [f"S{i:03d}" for i in range(1, 51)]   # ADR-002
 REFERENCE_RUNS = {"eyes_open": "R01", "eyes_closed": "R02"}  # source: dataset description
 DEMO_SUBJECT = "S060"                     # ADR-002: held out from reference and ML
 HOLDOUT_SUBJECTS = [f"S{i:03d}" for i in range(61, 110)]   # P6b external test: S061–S109, never trained on
+DEMO_LONGITUDINAL_SUBJECT = "S051"        # ADR-012 addendum: screened S051–S059; 12/12 T0 runs with ≥ 6 clean epochs
+# Guard: the demo subjects are never reference/ML subjects or holdout subjects (ADR-002, ADR-012).
+for _s in (DEMO_SUBJECT, DEMO_LONGITUDINAL_SUBJECT):
+    if _s in REFERENCE_SUBJECTS or _s in HOLDOUT_SUBJECTS:
+        raise ValueError(f"Demo subject {_s} overlaps the reference or holdout set")
 DEMO_RUNS = [f"R{i:02d}" for i in range(1, 15)]            # R01–R14
 DEMO_REST_LABEL = "T0"                    # source: dataset annotations (rest blocks)
 CONDITIONS = ("eyes_open", "eyes_closed")

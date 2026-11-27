@@ -111,10 +111,11 @@ def load_reference(condition: str, preset: str) -> dict:
 
 
 def assert_no_leak(subjects: list[str]) -> None:
-    """Raise AssertionError if the demo or any holdout subject is in `subjects` (ADR-002).
+    """Raise AssertionError if a demo (S060, S051) or holdout subject is in `subjects` (ADR-002, ADR-012).
 
     Explicit raise, not `assert`, so the guard survives `python -O`.
     """
-    leaked = sorted(set(subjects) & ({config.DEMO_SUBJECT} | set(config.HOLDOUT_SUBJECTS)))
+    held_out = {config.DEMO_SUBJECT, config.DEMO_LONGITUDINAL_SUBJECT} | set(config.HOLDOUT_SUBJECTS)
+    leaked = sorted(set(subjects) & held_out)
     if leaked:
         raise AssertionError(f"Held-out subjects in reference: {leaked}")
