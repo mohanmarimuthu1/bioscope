@@ -132,3 +132,14 @@ z_pct(max) − z_pct(next) ≈ 0.17 at n = 49) — inherent to ranks.
 (EO/EC): frontal8 40/42, muse4 44/47. The frontal8 eyes-open skip rate (12% at rev 1, 20% with the ≥ 6 rule) is **accepted** and stated in
 methodology.md limitations. The rule moved two method choices: frontal8 EC hibeta_exc → zscore (skew 0.76), muse4 EC hibeta_exc →
 percentile (skew 1.02, borderline). Percentile cells: frontal8 EO tbr_osc, paf; muse4 EO tbr_osc; muse4 EC tbr_osc, hibeta_exc.
+
+## ADR-011 — score() takes the preset; duration from qc; missing dimensions (2026-11-27)
+**Context:** §6 `score(features, qc, condition)` cannot pick the reference cell (ADR-010 keys it by preset; features carry no preset), and
+confidence needs duration_s, which only `load_eeg` meta has. The spec is silent on a dimension whose features are all NaN.
+**Decision (owner-approved plan):**
+1. Contract: `score(features, qc, condition, preset)`. No callers existed.
+2. duration_s is read from `qc["duration_s"]`; callers copy it from meta. Missing → 0 duration credit + warning. preprocess.py unchanged.
+3. A dimension with no available feature is None; the composite renormalises the weights over scored dimensions + warning.
+   If no EEG dimension can be scored, composite = None (signal quality alone is not a brain score; review found it gave 100).
+**Consequence:** P5/P7 callers must pass the preset and put duration_s into qc. Composite stays comparable only when all 4 dimensions are
+present; the UI must show the renormalisation warning.
