@@ -1,5 +1,5 @@
 {
- "build_date": "2026-11-27T21:19:46",
+ "build_date": "2026-11-27T22:01:15",
  "command": "python scripts/build_reference.py",
  "dataset": "PhysioNet EEGMMI v1.0.0 (ODC-By)",
  "runs": {
@@ -60,6 +60,7 @@
  ],
  "excluded_subjects": {
   "demo": "S060",
+  "longitudinal_demo": "S051",
   "holdout": [
    "S061",
    "S062",
