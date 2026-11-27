@@ -53,13 +53,30 @@ def test_percentile_inside_range_uses_midrank():
     assert reference.to_z("paf", 4.5, e) == pytest.approx(norm.ppf(4.5 / 10))
 
 
-def test_percentile_outside_range_takes_larger_and_caps():
-    e = _pct_entry(range(1, 10))                       # mean 5, std ~2.74
-    z_near = reference.to_z("paf", 9.5, e)             # just above max: larger of pct / param
-    assert z_near == pytest.approx(max(norm.ppf(9.5 / 10), (9.5 - 5) / e["std"]))
-    assert reference.to_z("paf", 100.0, e) == config.PERCENTILE_Z_CAP   # param z ~34.7 -> capped
+def test_percentile_outside_range_extends_linearly_and_caps():
+    e = _pct_entry(range(1, 10))                       # 1..9, std ~2.74
+    assert reference.to_z("paf", 9.5, e) == pytest.approx(norm.ppf(9 / 10) + 0.5 / e["std"])
+    assert reference.to_z("paf", 0.5, e) == pytest.approx(norm.ppf(1 / 10) - 0.5 / e["std"])
+    assert reference.to_z("paf", 100.0, e) == config.PERCENTILE_Z_CAP
     assert reference.to_z("paf", -100.0, e) == -config.PERCENTILE_Z_CAP
-    assert reference.to_z("paf", 0.9, e) == pytest.approx(norm.ppf(0.5 / 10))  # pct larger than param
+
+
+@pytest.mark.parametrize("edge", ["min", "max"])
+def test_percentile_continuous_and_monotonic_across_edge(edge):
+    rng = np.random.default_rng(42)
+    e = reference.build_entry("hibeta_exc", list(rng.lognormal(0, 1.2, 49)))
+    e["method"], e["values"] = "percentile", e.get("values") or []
+    if not e["values"]:
+        pytest.skip("sample not skewed enough")
+    t_edge = e[edge]
+    raw = lambda t: float(np.expm1(t))                 # inverse of ln1p
+    eps = 1e-9
+    z_at = reference.to_z("hibeta_exc", raw(t_edge), e)
+    z_out = reference.to_z("hibeta_exc", raw(t_edge + (eps if edge == "max" else -eps)), e)
+    assert abs(z_out - z_at) < 1e-6                    # no jump at the edge
+    grid = np.linspace(e["min"] - 2, e["max"] + 2, 400)
+    z = [reference.to_z("hibeta_exc", raw(t), e) for t in grid if t > -1]
+    assert np.all(np.diff(z) >= -1e-12)                # monotone non-decreasing
 
 
 def test_to_z_nan_input_is_nan():

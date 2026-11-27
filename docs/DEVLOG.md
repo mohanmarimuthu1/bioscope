@@ -157,3 +157,11 @@ Files: src/config.py, src/reference.py, scripts/build_reference.py, tests/test_r
 Went well: features were fast enough (200 extractions in ~30 s) to audit skew on the full reference before designing, and every number above comes from that run.
 Broke: ln(tbr_osc) = −inf on 6 recordings (theta_exc = 0); leak guard used bare `assert` (stripped by `python -O`) — both caught before commit.
 Next: P4b scoring must decide the percentile range-edge jump (ADR-010 KNOWN) and the frontal8 EO 12% skip rate.
+
+### 2026-11-27 21:25 — Percentile z: continuous extension outside the reference range
+Type: tuning
+Change: `reference.to_z` percentile cells outside [min, max] use z_pct(edge) + (t − edge)/std (was: larger of parametric / percentile z).
+Why: rev 1 jumped 2.05 → 3.85 just above the max (≈ 27 feature-score points for an infinitesimal change). ADR-010 rev 2.
+Effect on calculations: only values outside a percentile cell's reference range; reference.json unchanged.
+Before → After (frontal8 EC hibeta_exc): max + ε 3.85 → 2.05; 311 µV² 4.00 → 3.26; 0 µV² −2.33 → −2.21; median 0.00 → 0.00.
+Files: src/reference.py, tests/test_reference.py (+ continuity/monotonicity test, 12 passed)

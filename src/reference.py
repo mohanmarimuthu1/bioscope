@@ -13,8 +13,9 @@ ENTRY: {transform, method, mean, std, n, skew, min, max, values?}. mean/std/skew
 Z METHODS:
   zscore     z = (t − mean) / std
   percentile inside [min, max]: z = Φ⁻¹(rank / (n + 1)), rank = mid-rank of t among the
-             reference values (ties averaged, 1-based). Outside the range: the parametric z
-             if its magnitude is larger, else the percentile z. |z| capped at PERCENTILE_Z_CAP.
+             reference values (ties averaged, 1-based). Outside the range, a continuous
+             linear extension: z = z_pct(edge) + (t − edge) / std (ADR-010 rev 2; the rev 1
+             hybrid jumped 2.05 → 3.85 at the max). |z| capped at PERCENTILE_Z_CAP.
 CAVEATS:
   - n ≈ 43–49 per cell, so the skew estimate itself has SE ≈ 0.35; the |skew| > 1 split
     is an owner rule, not a test.
@@ -64,6 +65,12 @@ def build_entry(feature: str, values: list[float]) -> dict:
     return entry
 
 
+def _z_pct(v: np.ndarray, t: float) -> float:
+    """Φ⁻¹(rank/(n+1)) with the 1-based mid-rank of t among sorted reference values v."""
+    rank = (np.sum(v < t) + np.sum(v <= t)) / 2 + 0.5
+    return float(norm.ppf(rank / (len(v) + 1)))
+
+
 def to_z(feature: str, x: float, entry: dict) -> float:
     """z of a raw session value against a reference entry (see module docstring)."""
     t = transform(feature, x)
@@ -73,13 +80,12 @@ def to_z(feature: str, x: float, entry: dict) -> float:
     if entry["method"] == "zscore":
         return float(z_param)
     v = np.asarray(entry["values"])
-    n = len(v)
-    rank = (np.sum(v < t) + np.sum(v <= t)) / 2 + 0.5     # mid-rank, 1-based
-    z_pct = float(norm.ppf(rank / (n + 1)))
-    if entry["min"] <= t <= entry["max"]:
-        z = z_pct
+    if t < entry["min"]:          # continuous extension below the range (ADR-010 rev 2)
+        z = _z_pct(v, entry["min"]) + (t - entry["min"]) / entry["std"]
+    elif t > entry["max"]:        # ... and above it
+        z = _z_pct(v, entry["max"]) + (t - entry["max"]) / entry["std"]
     else:
-        z = z_param if abs(z_param) > abs(z_pct) else z_pct
+        z = _z_pct(v, t)
     cap = config.PERCENTILE_Z_CAP
     return float(np.clip(z, -cap, cap))
 

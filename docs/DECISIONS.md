@@ -108,8 +108,8 @@ Skew (bias-corrected) before → after transform. Cells: frontal8 EO / EC · mus
 1. Reference is separate per preset × condition (4 cells); presets never mix. Contract change: `load_reference(condition, preset)` (R11; no callers yet).
 2. Transforms: ln(1+x) for tbr_osc, alpha_exc, hibeta_exc (0 → 0); ln for tbr_classic (never 0 in the reference).
 3. |skew| > 1 after the transform → **percentile** method, else **zscore**. Bold cells above (5 of 28) are percentile.
-4. Percentile z: inside [min, max] of the reference, z = Φ⁻¹(rank/(n+1)) with 1-based mid-rank; outside, the parametric z on transformed values when its magnitude is larger; |z| ≤ 4.
-**Worked example** (frontal8 EC hibeta_exc, ln(1+x): n 49, mean 1.179, sd 0.902, range 0.141–4.651):
+4. *(rev 1 — superseded by rev 2 below)* Percentile z: inside [min, max] of the reference, z = Φ⁻¹(rank/(n+1)) with 1-based mid-rank; outside, the parametric z on transformed values when its magnitude is larger; |z| ≤ 4.
+**Worked example, rev 1** (frontal8 EC hibeta_exc, ln(1+x): n 49, mean 1.179, sd 0.902, range 0.141–4.651):
 | raw µV² | t | rank | z_pct | z_param | z |
 |---|---|---|---|---|---|
 | 1.64 (median) | 0.970 | 25 | 0.00 | −0.23 | **0.00** |
@@ -117,3 +117,14 @@ Skew (bias-corrected) before → after transform. Cells: frontal8 EO / EC · mus
 | 311 | 5.744 | 49.5 | 2.33 | 5.06 | **4.00** (outside, param, capped) |
 | 0.00 | 0.000 | 0.5 | −2.33 | −1.31 | **−2.33** (outside, pct larger) |
 **Consequence:** no −inf; per-cell method stored in reference.json (`transform`, `method`, `mean`, `std`, `n`, `skew`, `min`, `max`, `values` for percentile). KNOWN: the rule jumps at the range edge (max → 2.05, just above max → 3.85 in the example); flagged to owner for P4b. With n ≈ 44–49 the skew estimate has SE ≈ 0.35, so the threshold-1 split is a rule, not a test.
+**Revision 2 (2026-11-27 21:25, owner) — continuous extension outside the range.** Rev 1 jumped at the edge (max → 2.05, max + ε → 3.85).
+Now: below min z = z_pct(min) + (t − t_min)/std; above max z = z_pct(max) + (t − t_max)/std; |z| ≤ 4. Inside the range unchanged.
+z is continuous at both edges and monotone everywhere (tested). Inside the range it is still a step function of rank (e.g. top step
+z_pct(max) − z_pct(next) ≈ 0.17 at n = 49) — inherent to ranks.
+| raw µV² | t | rev 1 z | **rev 2 z** |
+|---|---|---|---|
+| 1.64 (median) | 0.970 | 0.00 | **0.00** |
+| 103.7 (= max) | 4.651 | 2.05 | **2.05** |
+| 103.7 + ε | 4.651⁺ | 3.85 | **2.05** |
+| 311 | 5.743 | 4.00 (capped) | **3.26** |
+| 0.00 | 0.000 | −2.33 | **−2.21** |
