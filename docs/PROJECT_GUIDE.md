@@ -18,9 +18,12 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 |---|---|
 | src/config.py | Every constant, with its source |
 | scripts/download_data.py | Fetches the 114 PhysioNet files |
+| src/io_utils.py | Opens EDF/FIF, fixes channel names, keeps only the preset's channels |
+| data/sample/sample_frontal8_raw.fif | 61 s real recording for tests/demo without downloading |
 
 ## 5. How the algorithm evolved
 - P0: Welch segment kept at 2 s (0.5 Hz bins) rather than 4 s, for lower-variance spectra (ADR-003).
+- P1: recordings are 61.0 s (9,760 samples), not the assumed 60 s; all checks now read the length from the file itself.
 
 ## 6. Current results
 *(P4 onward)*
