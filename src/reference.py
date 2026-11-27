@@ -105,7 +105,9 @@ def load_reference(condition: str, preset: str) -> dict:
     if preset not in cells or condition not in cells[preset]:
         avail = [f"{p}/{c}" for p in cells for c in cells[p]]
         raise ValueError(f"No reference for {preset}/{condition}; available: {avail}")
-    return cells[preset][condition]["features"]
+    cell = cells[preset][condition]
+    log.debug("reference %s/%s: %d subjects, built %s", preset, condition, len(cell["subjects_used"]), ref["build_date"])
+    return cell["features"]
 
 
 def assert_no_leak(subjects: list[str]) -> None:

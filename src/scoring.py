@@ -137,6 +137,8 @@ def score(features: dict, qc: dict, condition: str, preset: str) -> dict:
     if retained < config.MIN_RETAINED_FRAC or n_kept < config.MIN_EPOCHS:
         warnings.append(f"Low clean data ({n_kept} epochs, {retained:.0%} retained): interpret with caution")
 
+    log.info("score %s/%s: composite=%s confidence=%.2f warnings=%d", preset, condition,
+             None if composite is None else round(composite, 1), confidence, len(warnings))
     explanations = [_explain(f, feature_z[f], ref[f]["method"], condition)
                     for f in sorted(feature_scores, key=lambda f: -abs(feature_z[f]))
                     if abs(feature_z[f]) >= config.EXPLAIN_Z_THRESHOLD]
