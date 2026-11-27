@@ -54,12 +54,13 @@ H_FREQ = 45.0                             # Hz, band-pass high edge (design choi
 NOTCH_ONLY_IF_BELOW = 45.0                # apply notch only if line_freq < this (else low-pass covers it)
 ICA_METHOD = "fastica"
 ICA_MIN_CHANNELS = 8                      # run ICA on 8-ch only; skip on 4-ch (too few sources)
-ICA_EOG_THRESHOLD = 3.0                   # MNE find_bads_eog default z threshold
-ICA_MAX_EXCLUDE = 2                       # design choice: with 7 comps z-scores are unstable; cap by |score|
+ICA_EOG_MEASURE = "correlation"           # ADR-005: z>=3 is unreachable with 7 comps (max z = sqrt(6) ≈ 2.45)
+ICA_EOG_THRESHOLD = 0.7                   # ADR-005: |r| with Fp1/Fp2; audit-chosen (S001–S010)
+ICA_MAX_EXCLUDE = 2                       # design choice: cap removed components, ranked by |r|
 RANDOM_STATE = 42                         # fixed seed everywhere (CLAUDE.md §13)
 EPOCH_LENGTH_S = 4.0                      # design choice: 4 s windows
 EPOCH_OVERLAP_S = 2.0                     # 50% overlap
-REJECT_PTP_V = 150e-6                     # 150 µV peak-to-peak, in volts (MNE units)
+REJECT_PTP_V = 200e-6                     # 200 µV peak-to-peak, in volts (ADR-005; was 150 µV)
 MIN_RETAINED_FRAC = 0.5                   # below this: warn + lower confidence
 MIN_EPOCHS = 6                            # below this: warn + lower confidence
 

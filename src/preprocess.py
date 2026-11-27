@@ -41,9 +41,10 @@ def _filter(raw: mne.io.Raw, line_freq: float) -> bool:
 def _run_ica(raw: mne.io.Raw, warnings: list[str]) -> tuple[bool, list[int], list[float]]:
     """Fit ICA and remove blink components in place, using Fp1/Fp2 as EOG proxies.
 
-    Returns (ica_used, excluded_components, per-component max |EOG z-score|).
-    Exclusion = components over the z threshold, capped at the top ICA_MAX_EXCLUDE by
-    |score| (with n−1 = 7 components the z-scores are unstable, so we cap).
+    Returns (ica_used, excluded_components, per-component max |r| with the EOG proxies).
+    Exclusion = components with |r| ≥ ICA_EOG_THRESHOLD, capped at the top
+    ICA_MAX_EXCLUDE by |r|. Correlation, not z-score: with n−1 = 7 components a
+    z-score can never exceed √6 ≈ 2.45, so z ≥ 3 never fires (ADR-005).
     Any failure → no ICA, a warning, and processing continues.
     """
     eog = [ch for ch in config.EOG_PROXY_CHANNELS if ch in raw.ch_names]
@@ -57,7 +58,8 @@ def _run_ica(raw: mne.io.Raw, warnings: list[str]) -> tuple[bool, list[int], lis
         )
         ica.fit(raw, verbose="ERROR")
         inds, scores = ica.find_bads_eog(
-            raw, ch_name=eog, threshold=config.ICA_EOG_THRESHOLD, verbose="ERROR"
+            raw, ch_name=eog, threshold=config.ICA_EOG_THRESHOLD,
+            measure=config.ICA_EOG_MEASURE, verbose="ERROR",
         )
         combined = np.abs(np.atleast_2d(np.asarray(scores))).max(axis=0)
         chosen = sorted({int(i) for i in inds}, key=lambda i: -combined[i])[: config.ICA_MAX_EXCLUDE]
