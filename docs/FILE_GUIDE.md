@@ -285,3 +285,32 @@ no shap object in the joblib; train subjects ⊆ S001–S050 and disjoint from h
 ## src/config.py — update (P6)
 ML_PRESET, ML_LABELS, LGBM_PARAMS, LR_MAX_ITER, EPOCH_FEATURES_PATH (77ebae2); CV_ACCURACY_GATE 0.80 replaced by GATE_PERM_P 0.01,
 GATE_AUC 0.65, GATE_PAIRED_ACC 0.75, N_PERMUTATIONS 1000, SHAP_TOP_N 10 (5a446bb, ADR-013).
+
+## scripts/evaluate_holdout.py
+**Purpose:** external test on S061–S109 (never used by the reference or the model) with the saved model and reference — no refitting.
+**Inputs → outputs:** 98 EDFs (R01/R02) → models/holdout.json (ML, scores, features, warnings, crashes, thresholds, CV summary for comparison)
++ models/holdout_features.csv (one row per recording with composites).
+**Algorithm:** leak assert (holdout vs reference subjects used, S001–S050, model train_subjects, demo subjects) → parallel one-pass per recording
+(load → clean → extract → score; any exception is recorded, not raised) → ML metrics as in P6 on holdout epochs; the permutation test
+shuffles labels within subject against fixed predictions (no training here); subject-level bootstrap gives 95% CIs → score cells
+EO/EO, EC/EC, EC/EO → PAF, retention, fallback, grouped warning counts → ADR-013 thresholds (information; FAIL exits 1).
+**Why bootstrap by subject:** epochs within a subject are correlated; resampling epochs would make the CI too narrow.
+**Connects to:** train_sanity_model (recording_accuracy, paired_accuracy), ml_sanity (load_model, shap_matrix), scoring.score; read by pages/4_Methodology (P7).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 6e31d05 | Created | holdout AUC 0.684, paired 0.833, p 0.001 |
+
+## models/holdout.json · models/holdout_features.csv
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 4ded140 | Created | see DEVLOG 2026-11-28 09:25 |
+
+## tests/test_holdout.py
+3 tests: holdout set = S061–S109 and disjoint from reference/model/demo subjects; counts add up (98 = ok + crashes; scored + unscorable per cell);
+every metric and CI in range, permutation p ≥ 1/(n+1).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 7eb0aa3 | Created | suite 95 passed |
+
+## src/config.py — update (P6b)
+HOLDOUT_PATH, HOLDOUT_FEATURES_PATH, N_BOOTSTRAP = 1000 (0e3a557).

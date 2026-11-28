@@ -51,6 +51,7 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 - P6: the 80% accuracy gate for the eyes-open/closed check (set before any data) failed: 0.661 on frontal-only epochs. No bug — frontal
   alpha barely changes with eyes closed and subjects differ a lot. Gate replaced openly by a significance gate (ADR-013): AUC 0.72,
   89% of subjects ranked correctly, permutation p 0.001 → PASS.
+- P6b: on 49 untouched subjects the check held (AUC 0.68, paired 83%, p 0.001), slightly below CV as expected.
 
 ## 6. Current results
 - Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings
@@ -61,6 +62,8 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   no flags (max 1.74 SD).
 - ML check (P6), frontal8, subject-held-out: accuracy 0.661 ± 0.033, AUC 0.719, recording accuracy 0.70, paired 0.886 (39/44),
   permutation p 0.001; LR baseline 0.671 / 0.740. SHAP top 3: hibeta_abs, samp_entropy, alpha_osc.
+- Holdout (P6b), 49 unseen subjects, no refit: AUC 0.684 [0.626, 0.744], paired 0.833 (35/42), p 0.001; 98/98 files, 0 crashes.
+  Composite medians: EO/EO 84.9, EC/EC 85.1, EC vs EO ref 83.6 — the score separates conditions only weakly.
 
 ## 7. Limitations
 - Reference = 50 healthy US adults from one public dataset; typicality is relative to them only.

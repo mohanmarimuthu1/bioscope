@@ -112,7 +112,15 @@ A: SHAP top: high-beta power, sample entropy, alpha oscillation ratio. Alpha is 
 movement and muscle activity at frontal sites, which lowers high beta and entropy. Both are real EO/EC effects; we report this rather than claim alpha leads.
 
 ## Validation
-*(P4–P6)*
+**Q: How do you know it generalises?**
+A: We kept 49 subjects (S061–S109) completely untouched — not in the reference, not in training. On them, with no refitting, the eyes-open/closed
+check gives ROC-AUC 0.68 (95% CI 0.63–0.74, LR 0.71), ranks the eyes-closed run above the eyes-open run for 83% of subjects (35/42), and a
+permutation test gives p = 0.001 — close to cross-validation (AUC 0.72, 89%). The pipeline processed 98/98 unseen files with zero crashes.
+
+**Q: Does the score drop when someone closes their eyes?**
+A: Only a little. On the 49 unseen subjects, eyes-closed recordings scored against the eyes-open reference have median 83.6 vs 84.9 for
+eyes-open — because the score measures typicality and most features stay within about 1 SD. That is why the reference is condition-matched:
+we compare like with like rather than expect the score to detect the condition.
 
 ## Product
 *(P7)*

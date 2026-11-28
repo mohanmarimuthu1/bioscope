@@ -328,3 +328,29 @@ Files: src/config.py, src/ml_sanity.py, scripts/train_sanity_model.py, tests/tes
 Went well: the gate failure was diagnosed with measurements (no bug; montage + between-subject spread) before any change, and nothing was tuned to pass.
 Broke: the 80% gate was set without evidence and failed; replaced openly (ADR-013) with metrics fixed before the rerun. Console cp1252 crashed on "→" (fixed).
 Next: P6b holdout (S061–S109) with the same metrics, no refitting; then P7 UI with the ADR-013 wording.
+
+### 2026-11-28 09:25 — P6b: holdout evaluation on S061–S109, no refitting  (commits 0e3a557, 6e31d05, 4ded140, 7eb0aa3)
+Type: feature + data
+Command: python scripts/evaluate_holdout.py --workers 14
+98/98 recordings processed, 0 crashes, all 160 Hz. 2019 epochs (EO 896, EC 1123) from 47 subjects (2 subjects had no clean epochs in either run).
+| Metric | CV (S001–S050) LightGBM | Holdout LightGBM | Holdout LogReg |
+|---|---|---|---|
+| Per-epoch accuracy | 0.661 ± 0.033 | 0.640 | 0.654 |
+| Per-epoch ROC-AUC [95% CI, subject bootstrap] | 0.719 ± 0.038 | 0.684 [0.626, 0.744] | 0.711 [0.648, 0.780] |
+| Per-recording accuracy | 0.697 | 0.674 | 0.629 |
+| Paired within-subject [95% CI] | 0.886 (n = 44) | 0.833 (n = 42) [0.707, 0.933] | 0.833 [0.718, 0.932] |
+| Permutation p (1000, within subject) | 0.001 | 0.001 (null 0.521 ± 0.009, max 0.545) | 0.001 |
+ADR-013 thresholds on the holdout: PASS (p 0.001, AUC 0.684 > 0.65, paired 0.833 ≥ 0.75). Caveat: the AUC CI lower bound 0.626 is below 0.65.
+SHAP top-3 unchanged (hibeta_abs, samp_entropy, alpha_osc); alpha does not lead.
+Scores (frontal8 composite, median [IQR], n): EO vs EO ref 84.9 [79.0–87.7] n 42 (7 unscorable: 0 clean epochs); EC vs EC ref 85.1 [82.1–89.5] n 47;
+EC vs EO ref 83.6 [81.1–87.3] n 47. **Finding:** an eyes-closed recording scored against the eyes-open reference is only ~1.3 points lower
+(median) than eyes-open vs eyes-open — the composite separates conditions weakly (consistent with the S051 probe). It is a typicality score,
+and most subjects stay within ~1 SD on most features in either condition.
+Features: PAF EO 9.97 ± 1.09 Hz, EC 10.00 ± 0.84 Hz; retention median EO 0.79, EC 0.93; paf_fallback EO 52%, EC 21%.
+Effect on calculations: none (evaluation only).
+Files: src/config.py, scripts/evaluate_holdout.py, tests/test_holdout.py, models/holdout.json, models/holdout_features.csv
+
+### 2026-11-28 09:30 — P6b retro
+Went well: the external test reproduced the CV picture (AUC 0.72 → 0.68, paired 0.89 → 0.83, p 0.001), with zero crashes on 98 unseen files.
+Broke: nothing; one honest caveat (AUC CI touches 0.63) and one product finding (EC-vs-EO composite only ~1.3 lower) to state in the pitch.
+Next: P7 UI — ADR-013 wording, Methodology page reads metrics.json + holdout.json.

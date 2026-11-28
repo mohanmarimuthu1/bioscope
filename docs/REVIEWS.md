@@ -135,3 +135,15 @@ Tried to break: ran with -W default; the new warnings are shap/matplotlib deprec
 Diff: config ML block, ml_sanity, train script, models artefacts, tests. Contract: `predict` returns the §6 keys plus additive p_epochs,
 base_value, warnings. Model never imported by scoring.py (grep). Original 80% gate FAIL recorded in metrics.json and ADR-013; new gate PASS.
 Suite 92 passed. Author: owner only.
+
+## scripts/evaluate_holdout.py — 2026-11-28 — PASS
+Tried to break: missing file (S999) → returned as an error record, run continues; leak guard with S001 → raises; per-channel warnings grouped
+("on F7" → "on <ch>"); recordings with 0 clean epochs → excluded from ML, counted unscorable in scores (7 EO, 2 EC); non-160 Hz → listed (none).
+Checked: 98/98 ok; counts consistent (tested). Remaining: permutation null mean is 0.521, not 0.5 — pooled AUC across subjects with unequal
+label balance; the within-subject shuffle keeps that structure, which is the intended null.
+
+## tests/test_holdout.py — 2026-11-28 — PASS
+Tried to break: count identities and CI ordering; skips cleanly without holdout.json. Suite 95 passed.
+
+## P6b phase PR review (618efe7..7eb0aa3) — 2026-11-28 — PASS
+Diff: config paths, evaluate_holdout.py, holdout artefacts, tests. No refit (the script never calls fit). No contract change. Author: owner only.
