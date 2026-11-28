@@ -273,3 +273,22 @@ amplitude → data), and the screening rule was fixed before looking at candidat
 Broke: epoching straddled joins (1 epoch/session); boundary marks rejected 4/15 valid epochs after a FIF round trip; the first BUG-002 test
 did not reproduce the bug (in-memory only) — rewritten to round-trip through FIF and shown to fail on the old code.
 Next: P6 ML validation (train subjects from reference.json; assert_no_leak covers S051/S060/holdout).
+
+### 2026-11-28 08:44 — Probe: S051 R02 (eyes closed) as a "condition change" session — not added
+Type: analysis
+Question: would an eyes-closed recording, scored against the eyes-open frontal8 reference, flag in the S051 tracker?
+Command: score S051 R02 with the demo pipeline (load_eeg → clean(line_freq 60) → extract → score(condition="eyes_open", preset="frontal8")).
+Result: composite 87.0, confidence 0.82, kept 28/29. z vs baseline = (87.0 − 84.16) / 2.53 = **+1.13 < 2 → no flag**. Not added to the demo.
+| Dimension | S051 R02 vs EO ref | Baseline s01–s03 mean |
+|---|---|---|
+| Attention | 91.6 | 82.9 |
+| Relaxation | 85.5 | 86.4 |
+| Load | 92.7 | 76.3 |
+| Signal quality | 71.5 | 95.5 |
+Feature z: tbr_osc −1.00, paf +0.12, alpha_exc −1.18, faa −0.75, hibeta_exc −0.93, ap_exponent +0.05. Control: R02 vs EC ref = 85.5.
+Why it does not move: S051 has no frontal alpha rhythm above the 1/f background in either condition —
+alpha_exc 0.016 (R01) → 0.000 (R02) µV², alpha_osc 0.90 → 0.79, paf_fallback_frac 1.0 in both. Classic alpha_abs does rise
+1.18 → 1.56 µV² (+32%), but the score uses excess power (ADR-008), so eyes closing is invisible for this subject; dimension changes
+partly cancel (Load up, Signal quality down via fooof_r2 0.973 → 0.893). Limitation worth stating: a subject with no frontal alpha
+peak cannot show an EO→EC shift in the excess-power score. Nothing tuned.
+Files: none (data/raw/S051/S051R02.edf fetched, gitignored)
