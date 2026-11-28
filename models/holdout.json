@@ -1,0 +1,251 @@
+{
+ "build_date": "2026-11-28T09:10:57",
+ "command": "python scripts/evaluate_holdout.py",
+ "subjects": [
+  "S061",
+  "S062",
+  "S063",
+  "S064",
+  "S065",
+  "S066",
+  "S067",
+  "S068",
+  "S069",
+  "S070",
+  "S071",
+  "S072",
+  "S073",
+  "S074",
+  "S075",
+  "S076",
+  "S077",
+  "S078",
+  "S079",
+  "S080",
+  "S081",
+  "S082",
+  "S083",
+  "S084",
+  "S085",
+  "S086",
+  "S087",
+  "S088",
+  "S089",
+  "S090",
+  "S091",
+  "S092",
+  "S093",
+  "S094",
+  "S095",
+  "S096",
+  "S097",
+  "S098",
+  "S099",
+  "S100",
+  "S101",
+  "S102",
+  "S103",
+  "S104",
+  "S105",
+  "S106",
+  "S107",
+  "S108",
+  "S109"
+ ],
+ "preset": "frontal8",
+ "n_recordings": 98,
+ "n_ok": 98,
+ "crashes": [],
+ "sfreq_other": [],
+ "n_epochs": 2019,
+ "ml": {
+  "lgbm": {
+   "acc": 0.6404160475482912,
+   "auc": 0.6841945204172497,
+   "rec_acc": 0.6741573033707865,
+   "paired_acc": 0.8333333333333334,
+   "paired_n": 42,
+   "permutation": {
+    "observed_auc": 0.6841945204172497,
+    "null_mean": 0.5206629056815291,
+    "null_std": 0.008699540581415748,
+    "null_max": 0.5453097172751559,
+    "n_permutations": 1000,
+    "p_value": 0.000999000999000999
+   },
+   "auc_ci95": [
+    0.6257701076542517,
+    0.7435114087605598
+   ],
+   "paired_acc_ci95": [
+    0.7073170731707317,
+    0.9333333333333333
+   ],
+   "n_bootstrap": 1000
+  },
+  "lr": {
+   "acc": 0.6537890044576523,
+   "auc": 0.7106522707034729,
+   "rec_acc": 0.6292134831460674,
+   "paired_acc": 0.8333333333333334,
+   "paired_n": 42,
+   "permutation": {
+    "observed_auc": 0.7106522707034729,
+    "null_mean": 0.52374452797036,
+    "null_std": 0.007478094245841041,
+    "null_max": 0.5458185583895179,
+    "n_permutations": 1000,
+    "p_value": 0.000999000999000999
+   },
+   "auc_ci95": [
+    0.6481095571089419,
+    0.7804400753820763
+   ],
+   "paired_acc_ci95": [
+    0.7179347826086957,
+    0.9318181818181818
+   ],
+   "n_bootstrap": 1000
+  },
+  "shap": {
+   "top": [
+    {
+     "feature": "hibeta_abs",
+     "mean_abs_shap": 0.9937
+    },
+    {
+     "feature": "samp_entropy",
+     "mean_abs_shap": 0.6399
+    },
+    {
+     "feature": "alpha_osc",
+     "mean_abs_shap": 0.5329
+    },
+    {
+     "feature": "beta_exc",
+     "mean_abs_shap": 0.489
+    },
+    {
+     "feature": "alpha_abs",
+     "mean_abs_shap": 0.2083
+    },
+    {
+     "feature": "beta_abs",
+     "mean_abs_shap": 0.2059
+    },
+    {
+     "feature": "faa",
+     "mean_abs_shap": 0.1996
+    },
+    {
+     "feature": "tbr_classic",
+     "mean_abs_shap": 0.1776
+    },
+    {
+     "feature": "alpha_exc",
+     "mean_abs_shap": 0.1753
+    },
+    {
+     "feature": "paf",
+     "mean_abs_shap": 0.1629
+    }
+   ],
+   "alpha_ranks": {
+    "alpha_osc": 3,
+    "alpha_abs": 5,
+    "alpha_exc": 9
+   },
+   "alpha_leads": false
+  }
+ },
+ "scores": {
+  "eo_vs_eo": {
+   "n": 42,
+   "n_unscorable": 7,
+   "median": 84.85030339416619,
+   "q1": 78.95074949242829,
+   "q3": 87.72968618635747
+  },
+  "ec_vs_ec": {
+   "n": 47,
+   "n_unscorable": 2,
+   "median": 85.08586449138672,
+   "q1": 82.14844025027095,
+   "q3": 89.48516644698883
+  },
+  "ec_vs_eo": {
+   "n": 47,
+   "n_unscorable": 2,
+   "median": 83.62945714622728,
+   "q1": 81.08927109647945,
+   "q3": 87.3050980798173
+  }
+ },
+ "features": {
+  "eyes_open": {
+   "n_recordings": 49,
+   "n_zero_kept": 7,
+   "paf_mean": 9.971503867436764,
+   "paf_sd": 1.0904738248132493,
+   "retention_median": 0.7931034482758621,
+   "paf_fallback_rate": 0.5238095238095238
+  },
+  "eyes_closed": {
+   "n_recordings": 49,
+   "n_zero_kept": 2,
+   "paf_mean": 10.002188976920477,
+   "paf_sd": 0.8360955121548337,
+   "retention_median": 0.9310344827586207,
+   "paf_fallback_rate": 0.2127659574468085
+  }
+ },
+ "warning_counts": {
+  "FOOOF fit failed/poor on <ch>": 39,
+  "Low clean data: #/# epochs kept (#%); confidence is reduced": 17,
+  "Insufficient clean data: #/# epochs passed rejection": 9,
+  "No clean epochs: features not computed": 9
+ },
+ "thresholds": {
+  "rule": "ADR-013 values applied to LightGBM on the holdout (information; FAIL stops for owner review)",
+  "checks": {
+   "perm_p": true,
+   "auc": true,
+   "paired_acc": true
+  },
+  "passed": true
+ },
+ "cv_reference": {
+  "lgbm_acc": {
+   "mean": 0.6613729971234623,
+   "std": 0.0330952654856449
+  },
+  "lgbm_auc": {
+   "mean": 0.71938556737172,
+   "std": 0.037601077268284204
+  },
+  "lgbm_rec_acc": {
+   "mean": 0.6969934640522876,
+   "std": 0.10741731140839866
+  },
+  "lr_acc": {
+   "mean": 0.6710293221393521,
+   "std": 0.05154369734201696
+  },
+  "lr_auc": {
+   "mean": 0.7404056278027978,
+   "std": 0.05579995329425
+  },
+  "lr_rec_acc": {
+   "mean": 0.705359477124183,
+   "std": 0.12274920468952806
+  },
+  "lgbm_paired_acc": {
+   "value": 0.8863636363636364,
+   "n_subjects": 44
+  },
+  "lr_paired_acc": {
+   "value": 0.8863636363636364,
+   "n_subjects": 44
+  }
+ }
+}
