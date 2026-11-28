@@ -151,6 +151,9 @@ GATE_AUC = 0.65                           # ADR-013: mean subject-held-out per-e
 GATE_PAIRED_ACC = 0.75                    # ADR-013: share of subjects with mean p(EC) on R02 > R01 (out-of-fold)
 N_PERMUTATIONS = 1000                     # ADR-013: permutations for the gate's p-value (min p = 1/1001)
 SHAP_TOP_N = 10                           # ADR-013: features reported by mean |SHAP|
+HOLDOUT_PATH = MODELS_DIR / "holdout.json"                     # P6b external test results (S061–S109)
+HOLDOUT_FEATURES_PATH = MODELS_DIR / "holdout_features.csv"    # one row per holdout recording, for traceability
+N_BOOTSTRAP = 1000                        # design choice: subject-level bootstrap resamples for holdout 95% CIs
 ML_PRESET = "frontal8"                    # design choice: the demo/UI preset; muse4 ML is stretch
 ML_LABELS = {"eyes_open": 0, "eyes_closed": 1}   # R01 -> 0, R02 -> 1 (CLAUDE.md §7.8)
 LGBM_PARAMS = {                           # design choice: fixed before CV, never tuned on CV folds
