@@ -153,3 +153,18 @@ Tried to break: reproduce the stored CV from the committed CSV → fold 1 LightG
 now re-extracts from raw and asserts |diff| ≤ 1e-3 on every fold accuracy/AUC; holdout epoch count must equal holdout.json (2019).
 Checked: TN+FP+FN+TP = 2206 (CV) / 2019 (holdout); per-recording n 93 / 89; empty calibration bins handled (none occurred).
 Remaining: report only — LightGBM overconfidence is documented, not corrected.
+
+## src/pipeline.py — 2026-11-28 — PASS
+Tried to break: .csv upload; muse4 on the frontal8 sample (missing channels listed); 2 s file; 500 µV noise (0 epochs → composite None,
+no spectrum, ml unavailable); blank subject ID; repeated saves (index 1, 2). Checked: seeding reproduces all 13 P5 composites to 0.1.
+Remaining: corrupt-file errors depend on MNE raising OSError/RuntimeError (others reach the UI guard as a generic message).
+
+## src/ui.py + pages — 2026-11-28 — FIXED → PASS
+Tried to break: empty DB (auto-seed), pre-ADR-014 DB (re-seed), session with composite None, muse4 session (no SHAP), page links when a page
+is the entrypoint. Found: gauge passed `margin` twice → TypeError (guard showed a friendly error; AppTest caught it) → `_layout` merges margins.
+Checked: AppTest 6/6; clean clone all pages 0 exceptions/0 errors. Remaining: light/dark readability needs a visual check in a browser.
+
+## P7 phase PR review (78831cb..b3c6821) — 2026-11-28 — PASS
+Diff: db extras (ADR-014), pipeline, ui helpers, 5 pages, streamlit config, tests. Contracts: additive only (db record `extras`,
+reference_n). Scores unchanged (seeding test). No traceback path: every page body runs inside ui.guard. Suite 111 passed; clean clone 104
+passed / 7 skipped. Author: owner only.

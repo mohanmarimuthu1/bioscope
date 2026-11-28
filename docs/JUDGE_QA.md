@@ -130,4 +130,15 @@ eyes-open — because the score measures typicality and most features stay withi
 we compare like with like rather than expect the score to detect the condition.
 
 ## Product
-*(P7)*
+**Q: What does a user see after uploading?**
+A: The three named metrics (theta/beta ratio rhythm-based and classic, peak alpha frequency with its fallback share, high beta), the
+composite with confidence and the exact reference used (e.g. "vs eyes-open frontal8 reference, n = 40"), four dimension gauges, each feature's
+z-score, plain-language explanations, warnings, the power spectrum with its 1/f fit, and the validation check with SHAP. A 61 s file takes ~5 s.
+
+**Q: Why does the validation check say "eyes-closed" for the demo subject's eyes-open sessions?**
+A: Because it is a ~66%-accurate check on unseen subjects, and S051 is one it gets wrong (output 0.95–0.99 on all 13 eyes-open sessions;
+S051 has no frontal alpha rhythm). We show it anyway, with that limit stated on screen. The check validates the features across many
+subjects; it never decides the score and does not judge an individual.
+
+**Q: Does it need the internet or a GPU?**
+A: No. It runs on a CPU laptop, offline; the demo subject is scored from committed files on first launch.

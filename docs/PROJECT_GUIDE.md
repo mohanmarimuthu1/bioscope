@@ -30,6 +30,9 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 | src/features.py | Spectrum → FOOOF → PAF, band powers (abs/excess/ratio), TBR, FAA, entropy |
 | scripts/train_sanity_model.py | Trains the eyes-open/closed check with subject-held-out CV + permutation test |
 | src/ml_sanity.py | Runs that check on one recording and explains it with SHAP (never feeds the score) |
+| src/pipeline.py | One recording end to end (load → clean → features → score → check) for the UI, seeding and tests |
+| src/db.py | SQLite store: one row per session with features, QC, score and the spectrum/check extras |
+| src/ui.py, app.py, pages/ | Streamlit app: home, Upload, Session, Longitudinal, Methodology |
 
 ## 5. How the algorithm evolved
 - P0: Welch segment kept at 2 s (0.5 Hz bins) rather than 4 s, for lower-variance spectra (ADR-003).
@@ -52,6 +55,8 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   alpha barely changes with eyes closed and subjects differ a lot. Gate replaced openly by a significance gate (ADR-013): AUC 0.72,
   89% of subjects ranked correctly, permutation p 0.001 → PASS.
 - P6b: on 49 untouched subjects the check held (AUC 0.68, paired 83%, p 0.001), slightly below CV as expected.
+- P7: the UI reuses one shared pipeline, so it shows exactly the scripts' numbers (13/13 demo composites reproduced). Sessions now store
+  their spectrum and check summary (ADR-014). The check misreads the demo subject S051 as eyes-closed — stated on screen.
 
 ## 6. Current results
 - Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings

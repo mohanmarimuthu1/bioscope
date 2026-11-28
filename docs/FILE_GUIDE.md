@@ -327,3 +327,53 @@ the stored fold metrics → holdout per-epoch features via evaluate_holdout._one
 | Date | Commit | Change | Effect on numbers |
 |---|---|---|---|
 | 2026-11-28 | 78d4c05 | Created | none (report only) |
+
+## src/pipeline.py
+**Purpose:** one recording end to end for every caller: `run(path, preset, condition, line_freq, progress)` → meta, qc, features,
+per_epoch, score, spectrum, ml, timings_s; `save(result, subject_id, label, source)` → next session for that subject;
+`seed_demo()` → re-scores the 13 committed demo files into S051.
+**Algorithm:** check extension/condition → load (ValueError → PipelineError with the io_utils message listing missing channels) →
+too-short check (< one 4 s epoch) → clean → extract + session_spectrum → score → validation check (frontal8 only) → timings.
+**Why:** the UI must show exactly what the scripts and tests compute; no streamlit import keeps it testable.
+**Connects to:** io_utils, preprocess, features, scoring, ml_sanity, db; used by pages/1_Upload.py, src/ui.ensure_seeded, tests.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 4684f66 | Created | sample 86.2 in 5.3 s; seeding = P5 composites |
+
+## src/db.py — update (ADR-014)
+`extras_json` column (spectrum + validation summary + timings); older DBs migrate on connect; rows without extras load `{}`.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 6ca1835 | extras column | none |
+
+## src/ui.py
+**Purpose:** Streamlit-only helpers: page setup, `st.cache_resource` loaders (model, reference/metrics/holdout JSON), `ensure_seeded`
+(re-seeds S051 if missing or pre-ADR-014), `guard` (any exception → st.error, details to the terminal log), labels, plotly charts
+(gauge with red < 40 / amber 40–70 / green > 70, z bars, PSD + 1/f fit, SHAP bar). DB path = env BIOSCOPE_DB or config.DB_PATH.
+**Light/dark:** no hard-coded text colours; semi-transparent bands; charts use theme="streamlit".
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | da26d86 | Created | none |
+
+## app.py · pages/1_Upload.py · pages/2_Session.py · pages/3_Longitudinal.py · pages/4_Methodology.py
+- **app.py:** purpose, "typicality, not health — research prototype", PS3 + Team We2 / Mohankumar M, 3-step how-to, page links; seeds on first run.
+- **1_Upload:** file / subject / preset / condition / line frequency, "Load sample (S060 eyes-open)", st.status steps with progress,
+  friendly errors; upload bytes go to a temporary folder under data/ that is deleted right after processing.
+- **2_Session:** named metrics (TBR rhythm vs classic, PAF + fallback share, high beta), composite ± confidence with the reference and n,
+  4 gauges, feature z bars, explanations, warnings, PSD, validation (frontal8: ADR-013 wording + SHAP; muse4: frontal8-only note).
+- **3_Longitudinal:** subject picker (S051 default), composite + EMA + posterior ±1 sd band + flags + ±2 SD baseline band,
+  4 dimension mini-trends, delta table (dimensions + named metrics), DEMO_LABEL disclaimer.
+- **4_Methodology:** live CV + holdout table (incl. original 80% gate FAIL + ADR-013), confusion-matrix figure, reference n per cell, methodology.md.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | acf41dc, d909074, 7683bca, f11e716, e2f4aad | Created | none |
+
+## .streamlit/config.toml
+Usage statistics off (offline), 200 MB upload limit, minimal toolbar; no forced theme (light and dark follow the system).
+
+## tests/test_pipeline.py · tests/test_ui.py
+8 pipeline tests (sample < 10 s, bad extension, missing channels listed, too short, 0 epochs not an error, save indexing + extras, demo
+labels, seeding = P5 composites); 6 AppTest tests (first-run seeding, sample upload, muse4 missing-channel error, Session, Longitudinal, Methodology).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 4684f66, b3c6821 | Created | suite 111 passed |

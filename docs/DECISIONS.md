@@ -189,3 +189,16 @@ re-run per shuffle), SHAP top-10. New gate (LightGBM): **permutation p < 0.01 AN
 Alpha features do **not** lead SHAP (alpha_osc rank 3, after hibeta_abs and samp_entropy).
 **Consequence:** UI/pitch wording: "Validation: features separate eyes-open from eyes-closed well above chance (AUC 0.72, paired 89% of subjects,
 p < 0.01); frontal-only EEG limits per-epoch accuracy." Never quote 80% or "validated accuracy". P6b reports the same metrics on S061–S109.
+
+## ADR-014 — Sessions store spectrum and validation extras; shared pipeline module (2026-11-28)
+**Context:** the Session page must show the PSD with its 1/f fit and the SHAP bar for any saved session (including the 13 demo sessions),
+but the DB kept only features/qc/score. The pipeline steps also lived only in scripts, so the UI, seeding and tests would each repeat them.
+**Decision (owner-approved P7 plan):**
+1. `db`: additive `extras_json` column (`{spectrum: freqs, per-channel PSD + aperiodic fit, 4 significant figures; ml: p_eyes_closed,
+   mean SHAP per feature, base_value, n_epochs; timings_s}`); record key `extras` optional; an older DB gains the column on first connect
+   and its rows load with `{}`. ~11 KB per session.
+2. `src/pipeline.py` (no streamlit): `run` / `save` / `seed_demo` used by Upload, first-run seeding and tests; user-fixable problems raise
+   `PipelineError` with a plain message; 0 clean epochs is not an error (composite None).
+3. Additive helpers: `reference.reference_n`, `config.DEMO_LABEL` (single source; the demo script imports it), `config.MIN_DURATION_S`.
+**Consequence:** the UI shows exactly what scripts compute (seeding reproduces the 13 P5 composites, tested). `scripts/build_demo_sessions.py`
+still writes rows without extras; the UI re-seeds S051 through the pipeline when it finds such rows.

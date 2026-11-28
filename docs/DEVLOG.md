@@ -387,3 +387,28 @@ worse than predicting the class prior. Not fixed here (report only). Implication
 SHAP, not as a calibrated probability; LR has better probability quality. Figure: docs/figures/confusion_matrix.png.
 Effect on calculations: none.
 Files: scripts/report_classification.py, models/metrics.json (cv_extra), models/holdout.json (extra), docs/figures/confusion_matrix.png
+
+### 2026-11-28 10:50 — P7: Streamlit UI (home + 4 pages), shared pipeline, ADR-014  (commits 6ca1835, 4684f66, da26d86, acf41dc, d909074, 7683bca, f11e716, e2f4aad, b3c6821)
+Type: feature
+Change: `src/pipeline.py` (run/save/seed_demo), DB extras (ADR-014), `src/ui.py`, app.py + pages 1–4, `.streamlit/config.toml` (usage stats off), AppTest suite.
+Numbers:
+- Sample upload (S060 R01, 61 s, frontal8): **5.3 s total** (load 0.01, clean 3.6, features 0.9, score 0.01, check 0.8) — target < 10 s.
+- First-run seeding of 13 S051 sessions: ~17 s in a test run, 42 s on the first app run (includes imports); composites identical to P5 (tested).
+- **Sample scores 86.2, docs say 86.3 — not a bug.** S060R01.edf → 86.26 (conf 0.926); the committed float32 sample FIF → 86.21 (0.923).
+  The demo video uses the sample, so it shows 86.2.
+- **Finding: the validation check leans eyes-closed on every S051 eyes-open session** (mean model output 0.95–0.99), while S060 R01 → 0.19.
+  Consistent with ~66% per-epoch accuracy on unseen subjects (S051 has no frontal alpha rhythm and low high-beta). Not tuned; the Session
+  page now says the check reads about 2 in 3 epochs correctly and can misread a single recording.
+- Clean clone (git clone → uv venv → install requirements, 6 s warm cache): pytest 104 passed, 7 skipped (raw-data tests);
+  `streamlit run` health OK; fresh DB auto-seeded; all 5 pages render with 0 exceptions and 0 errors after a sample upload.
+Bugs caught by the new tests before commit (not in any commit): gauge passed `margin` twice to plotly (TypeError → shown as a friendly
+error by the guard, caught by AppTest); AppTest needed app.py as entrypoint for `st.page_link` to resolve.
+Effect on calculations: none.
+Files: src/pipeline.py, src/db.py, src/ui.py, src/config.py, src/reference.py, scripts/build_demo_sessions.py, app.py, pages/*.py,
+.streamlit/config.toml, tests/test_pipeline.py, tests/test_db.py, tests/test_ui.py
+
+### 2026-11-28 10:55 — P7 retro
+Went well: one shared pipeline means the UI, seeding and tests compute the same numbers (13/13 P5 composites reproduced); AppTest gives
+every page a headless render test, and it caught a real plotly bug before commit.
+Broke: nothing shipped broken; visual light/dark checks still need a human in a browser (AppTest renders no pixels).
+Next: P8 hardening — README, methodology.md full version, sensitivity analysis; owner checks pages by eye before screenshots.
