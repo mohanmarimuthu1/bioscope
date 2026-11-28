@@ -145,3 +145,16 @@ FLAG_Z = 2.0                              # flag if |score - mean| / std > 2
 # --------------------------------------------------------------------------- ML validation
 CV_FOLDS = 5                              # GroupKFold by subject
 CV_ACCURACY_GATE = 0.80                   # LightGBM must reach this or features are suspect
+ML_PRESET = "frontal8"                    # design choice: the demo/UI preset; muse4 ML is stretch
+ML_LABELS = {"eyes_open": 0, "eyes_closed": 1}   # R01 -> 0, R02 -> 1 (CLAUDE.md §7.8)
+LGBM_PARAMS = {                           # design choice: fixed before CV, never tuned on CV folds
+    "n_estimators": 200,
+    "learning_rate": 0.05,
+    "num_leaves": 15,
+    "min_child_samples": 20,
+    "random_state": RANDOM_STATE,
+    "n_jobs": 1,
+    "verbose": -1,
+}
+LR_MAX_ITER = 1000                        # design choice: enough for lbfgs to converge on 17 scaled features
+EPOCH_FEATURES_PATH = MODELS_DIR / "epoch_features.csv"   # per-epoch training table behind the ML model
