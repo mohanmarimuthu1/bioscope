@@ -156,6 +156,7 @@ SHAP_TOP_N = 10                           # ADR-013: features reported by mean |
 HOLDOUT_PATH = MODELS_DIR / "holdout.json"                     # P6b external test results (S061–S109)
 HOLDOUT_FEATURES_PATH = MODELS_DIR / "holdout_features.csv"    # one row per holdout recording, for traceability
 N_BOOTSTRAP = 1000                        # design choice: subject-level bootstrap resamples for holdout 95% CIs
+
 ML_PRESET = "frontal8"                    # design choice: the demo/UI preset; muse4 ML is stretch
 ML_LABELS = {"eyes_open": 0, "eyes_closed": 1}   # R01 -> 0, R02 -> 1 (CLAUDE.md §7.8)
 LGBM_PARAMS = {                           # design choice: fixed before CV, never tuned on CV folds
@@ -169,3 +170,8 @@ LGBM_PARAMS = {                           # design choice: fixed before CV, neve
 }
 LR_MAX_ITER = 1000                        # design choice: enough for lbfgs to converge on 17 scaled features
 EPOCH_FEATURES_PATH = MODELS_DIR / "epoch_features.csv"   # per-epoch training table behind the ML model
+
+# --------------------------------------------------------------------------- UI (P7)
+GAUGE_RED_BELOW = 40.0                    # owner spec: dimension gauge red < 40
+GAUGE_GREEN_ABOVE = 70.0                  # owner spec: amber 40–70, green > 70
+DB_ENV_VAR = "BIOSCOPE_DB"                # optional DB path override (tests use a temp DB)
