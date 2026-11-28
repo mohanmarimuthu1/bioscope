@@ -46,3 +46,29 @@ def test_list_and_delete(tmp_path):
     assert db.delete_subject("A", db_path=p) == 1
     assert db.list_subjects(db_path=p) == ["B"]
     assert len(db.load_subject("missing", db_path=p)) == 0
+
+
+def test_extras_round_trip_and_default(tmp_path):
+    p = tmp_path / "t.db"
+    rec = _record(1)
+    rec["extras"] = {"spectrum": {"freqs": np.array([1.0, 1.5]), "psd": [[np.nan, 2.0]]}, "ml": {"p_eyes_closed": np.float64(0.2)}}
+    db.save_session(rec, db_path=p)
+    db.save_session(_record(2), db_path=p)                       # no extras key
+    df = db.load_subject("T001", db_path=p)
+    assert df["extras"].iloc[0] == {"spectrum": {"freqs": [1.0, 1.5], "psd": [[None, 2.0]]}, "ml": {"p_eyes_closed": 0.2}}
+    assert df["extras"].iloc[1] == {}
+
+
+def test_pre_adr014_db_is_migrated(tmp_path):
+    import sqlite3
+    p = tmp_path / "old.db"
+    con = sqlite3.connect(p)
+    con.execute(db._SCHEMA.replace(",\n    extras_json TEXT NOT NULL DEFAULT '{}'", ""))
+    con.execute("INSERT INTO sessions (subject_id, session_index, condition, preset, features_json, qc_json, score_json, created_at)"
+                " VALUES ('OLD', 1, 'eyes_open', 'frontal8', '{}', '{}', '{}', 'x')")
+    con.commit()
+    con.close()
+    df = db.load_subject("OLD", db_path=p)
+    assert df["extras"].tolist() == [{}]
+    db.save_session(_record(2, subject="OLD"), db_path=p)
+    assert len(db.load_subject("OLD", db_path=p)) == 2

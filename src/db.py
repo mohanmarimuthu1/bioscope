@@ -8,7 +8,9 @@ CAVEATS:
   - JSON has no NaN/inf: they are stored as null and come back as None (callers treat None as missing).
     numpy scalars/arrays are converted to Python types.
   - record keys: subject_id, session_index, label, condition, preset, source, recorded_at (str or None),
-    features, qc, score (dicts). composite/confidence are copied from score for quick queries.
+    features, qc, score (dicts); optional extras (dict: spectrum + validation-model summary for the UI, ADR-014).
+    composite/confidence are copied from score for quick queries.
+  - A DB created before ADR-014 gains the extras_json column on first connect; its rows load with extras = {}.
 """
 import json
 import logging
@@ -39,9 +41,10 @@ CREATE TABLE IF NOT EXISTS sessions (
     features_json TEXT NOT NULL,
     qc_json TEXT NOT NULL,
     score_json TEXT NOT NULL,
-    created_at TEXT NOT NULL
+    created_at TEXT NOT NULL,
+    extras_json TEXT NOT NULL DEFAULT '{}'
 )"""
-_JSON_COLS = {"features_json": "features", "qc_json": "qc", "score_json": "score"}
+_JSON_COLS = {"features_json": "features", "qc_json": "qc", "score_json": "score", "extras_json": "extras"}
 
 
 def _clean(obj):
@@ -66,6 +69,11 @@ def _dumps(obj) -> str:
 def _connect(db_path: Path | str | None) -> sqlite3.Connection:
     con = sqlite3.connect(str(db_path or config.DB_PATH))
     con.execute(_SCHEMA)
+    cols = {row[1] for row in con.execute("PRAGMA table_info(sessions)")}
+    if "extras_json" not in cols:                      # ADR-014: migrate a pre-extras DB in place
+        con.execute("ALTER TABLE sessions ADD COLUMN extras_json TEXT NOT NULL DEFAULT '{}'")
+        con.commit()
+        log.info("db: added extras_json column (ADR-014)")
     return con
 
 
@@ -76,12 +84,12 @@ def save_session(record: dict, db_path: Path | str | None = None) -> int:
            record["preset"], record.get("source"), record.get("recorded_at"),
            _clean(score.get("composite")), _clean(score.get("confidence")),
            _dumps(record.get("features", {})), _dumps(record.get("qc", {})), _dumps(score),
-           datetime.now().isoformat(timespec="seconds"))
+           datetime.now().isoformat(timespec="seconds"), _dumps(record.get("extras") or {}))
     with _connect(db_path) as con:
         cur = con.execute(
             "INSERT INTO sessions (subject_id, session_index, label, condition, preset, source, recorded_at,"
-            " composite, confidence, features_json, qc_json, score_json, created_at)"
-            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
+            " composite, confidence, features_json, qc_json, score_json, created_at, extras_json)"
+            " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", row)
         rid = int(cur.lastrowid)
     con.close()
     log.info("saved session %s #%s (id %d)", record["subject_id"], record["session_index"], rid)
