@@ -28,6 +28,8 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 | data/sample/sample_frontal8_raw.fif | 61 s real recording for tests/demo without downloading |
 | src/preprocess.py | Filters, removes blinks with ICA, cuts 4 s epochs, drops noisy ones |
 | src/features.py | Spectrum → FOOOF → PAF, band powers (abs/excess/ratio), TBR, FAA, entropy |
+| scripts/train_sanity_model.py | Trains the eyes-open/closed check with subject-held-out CV + permutation test |
+| src/ml_sanity.py | Runs that check on one recording and explains it with SHAP (never feeds the score) |
 
 ## 5. How the algorithm evolved
 - P0: Welch segment kept at 2 s (0.5 Hz bins) rather than 4 s, for lower-variance spectra (ADR-003).
@@ -46,6 +48,9 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
 - P5: concatenated rest blocks gave 1 epoch per session (one epoch grid across joins) → grid restarts per block (ADR-012); boundary marks
   then still dropped 4/15 epochs (BUG-002). S060's between-task rest was too noisy (0–5/15 epochs kept) → demo subject S051, chosen by a
   fixed screening rule.
+- P6: the 80% accuracy gate for the eyes-open/closed check (set before any data) failed: 0.661 on frontal-only epochs. No bug — frontal
+  alpha barely changes with eyes closed and subjects differ a lot. Gate replaced openly by a significance gate (ADR-013): AUC 0.72,
+  89% of subjects ranked correctly, permutation p 0.001 → PASS.
 
 ## 6. Current results
 - Reference (P4a): EO PAF mean 9.65 Hz (frontal8) / 10.42 Hz (muse4); eyes-closed alpha_exc 2.9× / 4.1× eyes-open. 12 of 200 recordings
@@ -54,9 +59,12 @@ decomposed into dimensions → features → z-scores → signal, plus a tracker 
   89.4 vs eyes-closed. muse4: 84.2 / 83.7 / 86.5. Full breakdown in DEVLOG 2026-11-27 21:26.
 - Longitudinal demo (P5), S051, 13 sessions: composites 79.8–87.0, confidence 0.87–0.99, baseline 84.2 ± 2.5, posterior 84.3 ± 1.5,
   no flags (max 1.74 SD).
+- ML check (P6), frontal8, subject-held-out: accuracy 0.661 ± 0.033, AUC 0.719, recording accuracy 0.70, paired 0.886 (39/44),
+  permutation p 0.001; LR baseline 0.671 / 0.740. SHAP top 3: hibeta_abs, samp_entropy, alpha_osc.
 
 ## 7. Limitations
 - Reference = 50 healthy US adults from one public dataset; typicality is relative to them only.
+- Frontal-only EEG limits per-epoch eyes-open/closed accuracy (0.66); the check is significant, not highly accurate.
 - Research prototype, not a diagnostic device.
 
 ## 8. Glossary

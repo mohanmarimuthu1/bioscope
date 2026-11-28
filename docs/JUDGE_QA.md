@@ -92,7 +92,24 @@ is removed in every recording — it may also contain some real frontal activity
 but the 8-channel result is the primary one; muse4 is the Muse-like approximation (real Muse uses TP9/TP10).
 
 ## ML
-*(P6)*
+**Q: Why only 66% accuracy?**
+A: Our honest result on unseen subjects: per-epoch accuracy 0.661 ± 0.033, ROC-AUC 0.72, from 4 s frontal-only epochs. Three reasons:
+(1) the eyes-closed alpha increase is mainly posterior; frontally, alpha power rose in only 25 of 44 subjects. (2) Subjects differ more from each
+other than eyes-open differs from eyes-closed within one subject. (3) An exploratory check on posterior channels reached only 0.70–0.76, so
+this data has a ceiling. Within each subject the model ranks the eyes-closed run above the eyes-open run for 89% (39/44), and a 1000-shuffle
+permutation test gives p = 0.001. We set an 80% target before seeing data, missed it, and say so (ADR-013).
+
+**Q: Why use ML if it doesn't decide the score?**
+A: To test the features. If epoch-level features separate eyes-open from eyes-closed on subjects the model never saw, the pipeline carries
+real physiological signal. The score stays transparent (z vs reference); the model is a check, shown with SHAP.
+
+**Q: How did you avoid leakage?**
+A: GroupKFold by subject (no subject in train and test), hyper-parameters fixed before CV, and held-out subjects (S051, S060, S061–S109)
+are refused in code. The permutation test re-trains on every shuffle, so the null includes the whole procedure.
+
+**Q: Which features does the model use?**
+A: SHAP top: high-beta power, sample entropy, alpha oscillation ratio. Alpha is third, not first: with eyes closed there is also less eye
+movement and muscle activity at frontal sites, which lowers high beta and entropy. Both are real EO/EC effects; we report this rather than claim alpha leads.
 
 ## Validation
 *(P4–P6)*

@@ -117,3 +117,21 @@ Checked: output matches the independent screening run exactly (13 composites). N
 ## P5 phase PR review (c74ac45..HEAD) — 2026-11-27 — PASS
 Diff: preprocess epoching, longitudinal, db, demo builder, --demo download, S051 guard, data/demo, reference metadata. Contracts unchanged
 except additive (`db_path`, qc `n_segments`). All score() callers pass preset and qc["duration_s"] (grep). Suite 85 passed. Author: owner only.
+
+## src/ml_sanity.py — 2026-11-28 — PASS
+Tried to break: empty table (object dtypes) → returns before astype; missing column → ValueError; shap 0.51 list output for binary LightGBM
+(warning seen) → additivity test proves the eyes-closed class is used (atol 1e-6); explainer pickling (asserted absent).
+Checked: S060 R01 p 0.187 (27 epochs), R02 p 0.914. Remaining: lru_cache keeps the old model if retrained during an app session.
+
+## scripts/train_sanity_model.py — 2026-11-28 — FIXED → PASS
+Tried to break: subject on both sides of a fold (asserted, none); held-out subjects (assert_no_leak twice + ⊆ S001–S050); determinism
+(two runs, identical fold numbers); subjects with only one usable run (excluded from paired, n = 44); permutation p floor (16-shuffle smoke run p = 1/17).
+Found: a print with "→" crashed on the Windows cp1252 console → ASCII "->". Remaining: permutation run ~4 min.
+
+## tests/test_ml_sanity.py — 2026-11-28 — PASS
+Tried to break: ran with -W default; the new warnings are shap/matplotlib deprecations + the known FastICA notice. 7 passed; suite 92 passed.
+
+## P6 phase PR review (3d4225d..c6b114b) — 2026-11-28 — PASS (gate replaced, ADR-013)
+Diff: config ML block, ml_sanity, train script, models artefacts, tests. Contract: `predict` returns the §6 keys plus additive p_epochs,
+base_value, warnings. Model never imported by scoring.py (grep). Original 80% gate FAIL recorded in metrics.json and ADR-013; new gate PASS.
+Suite 92 passed. Author: owner only.

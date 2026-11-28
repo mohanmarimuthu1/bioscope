@@ -241,3 +241,47 @@ epoching. Continuous files: identical events (tested), reference unchanged. qc g
 
 ## scripts/download_data.py — update
 `--demo` (commit 29aa9e8): S051 R01 + R03–R14 (13 files), mutually exclusive with `--holdout`.
+
+## src/ml_sanity.py
+**Purpose:** eyes-open/closed validation model at runtime: `predict(per_epoch)` → p_eyes_closed (mean over epochs), p_epochs, SHAP values
+(n_epochs × 17, log-odds), base_value, feature_names, warnings. Never feeds the score.
+**Inputs → outputs:** frontal8 per-epoch table from `features.extract` → dict above. Empty table → p None + warning; missing column → ValueError.
+**Algorithm:** load models/lgbm_eyes.joblib once (lru_cache) → LightGBM predict_proba → SHAP TreeExplainer built at runtime (lru_cache, never
+pickled) → `shap_matrix` takes the eyes-closed class whatever shape shap returns (shap 0.51 returns a list for binary LightGBM).
+Also holds `make_lgbm` / `make_lr`, so the pickled LR pipeline (log1p on *_abs/*_exc → median impute → scale → LR) unpickles from an importable module.
+**Why:** pitch anchor 4. SHAP gives a per-epoch reason the UI can show.
+**Parameters:** config.LGBM_PARAMS (fixed before CV), LR_MAX_ITER, ML_PRESET.
+**Connects to:** features.EPOCH_COLUMNS; trained by scripts/train_sanity_model.py; shown on pages/2_Session (P7).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | c45b366 | Created | S060 R01 p(EC) 0.187, R02 0.914 |
+
+## scripts/train_sanity_model.py
+**Purpose:** train and validate the model; write lgbm_eyes.joblib, metrics.json, epoch_features.csv.
+**Algorithm:** S001–S050 R01 (0) / R02 (1), frontal8, all epochs passing rejection (parallel workers) → leak guards → GroupKFold(5) by subject,
+same folds for LightGBM and LR → per-epoch acc/AUC, per-recording acc, paired within-subject acc from out-of-fold p → permutation test
+(labels shuffled within each subject, full CV per shuffle, 1000×, ~4 min on 14 workers) → final models on all data → SHAP top-10 → gate (ADR-013), exit 1 on FAIL.
+**Why grouped CV:** epochs of one subject are correlated; mixing them across folds would inflate accuracy.
+**Why within-subject permutation:** keeps each subject's label balance, so the null includes subject effects.
+**Parameters:** `--workers`, `--permutations` (default 1000; p cannot go below 1/(n+1)).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 9b3f8c6 | Created | LGBM acc 0.661, AUC 0.719, paired 0.886, p 0.001 |
+
+## models/lgbm_eyes.joblib · models/metrics.json · models/epoch_features.csv
+joblib = {lgbm, lr, feature_names, preset, train_subjects, lgbm_params, lr_max_iter, versions, build_date}; no explainer.
+metrics.json = original_gate (0.80, FAIL, replaced), folds, summary, permutation, shap, gate. epoch_features.csv = 2206 training rows.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 1f73e00 | Created | see DEVLOG 2026-11-28 09:10 |
+
+## tests/test_ml_sanity.py
+7 tests: EO sample p < 0.5; EC S060 R02 p > 0.5 (skips without raw data); SHAP shape + additivity (row sum + base = raw margin);
+no shap object in the joblib; train subjects ⊆ S001–S050 and disjoint from held-out; empty table; missing column; log1p only on power columns.
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | c6b114b | Created | suite 92 passed |
+
+## src/config.py — update (P6)
+ML_PRESET, ML_LABELS, LGBM_PARAMS, LR_MAX_ITER, EPOCH_FEATURES_PATH (77ebae2); CV_ACCURACY_GATE 0.80 replaced by GATE_PERM_P 0.01,
+GATE_AUC 0.65, GATE_PAIRED_ACC 0.75, N_PERMUTATIONS 1000, SHAP_TOP_N 10 (5a446bb, ADR-013).

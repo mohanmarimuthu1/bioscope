@@ -292,3 +292,39 @@ alpha_exc 0.016 (R01) → 0.000 (R02) µV², alpha_osc 0.90 → 0.79, paf_fallba
 partly cancel (Load up, Signal quality down via fooof_r2 0.973 → 0.893). Limitation worth stating: a subject with no frontal alpha
 peak cannot show an EO→EC shift in the excess-power score. Nothing tuned.
 Files: none (data/raw/S051/S051R02.edf fetched, gitignored)
+
+### 2026-11-28 09:10 — P6: eyes-open/closed validation model; 80% gate failed, replaced (ADR-013)  (commits 77ebae2, 5a446bb, c45b366, 9b3f8c6, 1f73e00, c6b114b)
+Type: feature + data
+Command: python scripts/train_sanity_model.py --workers 14
+Data: S001–S050 R01/R02, frontal8, every epoch passing rejection: 2206 epochs (EO 1023, EC 1183), 49/50 subjects (S009 none), median 28/recording.
+**Original gate (set before evidence): LightGBM accuracy ≥ 0.80 → FAIL at 0.661 ± 0.033 (AUC 0.719).** Diagnosis: no bug
+(per-epoch vs session r 0.92–0.995; per-epoch PAF r 0.39 by design, ADR-007). Within-subject EC−EO direction (subjects up / 44):
+alpha_osc 37, tbr_classic 34, alpha_exc 32, alpha_abs 25; hibeta_abs 8, beta_abs 9, samp_entropy 13 (these drop with eyes closed:
+less eye-movement/muscle activity). Exploratory scratch runs (not in the repo): posterior8 LGBM 0.704 / LR 0.760; session-level 0.688;
+relative power 0.659–0.666. Owner replaced the gate (ADR-013).
+| Fold | Test subj | Epochs | LGBM acc | AUC | Rec acc | LR acc | AUC | Rec acc |
+|---|---|---|---|---|---|---|---|---|
+| 0 | 10 | 440 | 0.607 | 0.680 | 0.53 | 0.741 | 0.796 | 0.88 |
+| 1 | 10 | 442 | 0.667 | 0.748 | 0.65 | 0.649 | 0.767 | 0.60 |
+| 2 | 10 | 443 | 0.670 | 0.677 | 0.75 | 0.605 | 0.648 | 0.60 |
+| 3 | 10 | 442 | 0.665 | 0.739 | 0.78 | 0.661 | 0.741 | 0.67 |
+| 4 | 9 | 439 | 0.697 | 0.753 | 0.78 | 0.699 | 0.751 | 0.78 |
+
+| Metric | LightGBM | LogReg |
+|---|---|---|
+| Per-epoch accuracy | 0.661 ± 0.033 | 0.671 ± 0.052 |
+| Per-epoch ROC-AUC | 0.719 ± 0.038 | 0.740 ± 0.056 |
+| Per-recording accuracy | 0.697 ± 0.107 | 0.705 ± 0.123 |
+| Paired within-subject (n = 44) | 0.886 | 0.886 |
+| Permutation p (1000, within subject) | 0.001 (null 0.501 ± 0.017, max 0.561) | 0.001 (null 0.507 ± 0.016, max 0.551) |
+
+SHAP top-10 (mean |SHAP|): hibeta_abs 0.651, samp_entropy 0.558, alpha_osc 0.500, beta_exc 0.441, alpha_abs 0.211, faa 0.199,
+tbr_classic 0.183, beta_abs 0.183, alpha_exc 0.162, paf 0.152. Alpha does not lead (best rank 3).
+**ADR-013 gate: PASS** (p 0.001 < 0.01, AUC 0.719 > 0.65, paired 0.886 ≥ 0.75). Runtime check: S060 R01 p(EC) 0.187, S060 R02 0.914.
+Effect on calculations: none on scores (the model never feeds the score).
+Files: src/config.py, src/ml_sanity.py, scripts/train_sanity_model.py, tests/test_ml_sanity.py, models/{lgbm_eyes.joblib, metrics.json, epoch_features.csv}
+
+### 2026-11-28 09:15 — P6 retro
+Went well: the gate failure was diagnosed with measurements (no bug; montage + between-subject spread) before any change, and nothing was tuned to pass.
+Broke: the 80% gate was set without evidence and failed; replaced openly (ADR-013) with metrics fixed before the rerun. Console cp1252 crashed on "→" (fixed).
+Next: P6b holdout (S061–S109) with the same metrics, no refitting; then P7 UI with the ADR-013 wording.

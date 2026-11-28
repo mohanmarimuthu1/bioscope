@@ -172,3 +172,20 @@ at 200 µV (5 of 12 sessions unscorable). Screened S051–S059 (outside the refe
 Pick rule (owner): most runs with ≥ 6 kept; tie → higher median confidence; accept if ≥ 10/12. S051 and S055 tie at 12/12 → **S051** (0.98 > 0.96).
 `config.DEMO_LONGITUDINAL_SUBJECT = "S051"`; config refuses to load if either demo subject is in the reference or holdout lists, and
 `reference.assert_no_leak` (also used for ML training subjects) rejects it. S060 stays the held-out sample/test subject (sample file, tests, P3/P4 numbers unchanged).
+
+## ADR-013 — ML validation gate replaced after it failed (2026-11-28)
+**Context:** §7.8 set the gate "LightGBM subject-held-out CV accuracy ≥ 80%" **before any evidence**. On frontal8 it failed:
+**accuracy 0.661 ± 0.033, ROC-AUC 0.719** (LR baseline 0.671 ± 0.052, AUC 0.740). No pipeline bug found: per-epoch feature medians track the
+session features (Spearman r 0.92–0.995). Cause: frontal-only channels plus large differences between subjects — the eyes-closed alpha
+increase is mainly posterior, and frontal alpha_abs rose in only 25/44 subjects. Exploratory scratch runs (not in the repo): posterior channels
+P3 Pz P4 PO3 PO4 O1 Oz O2 → LGBM 0.704 / LR 0.760; frontal8 session-level LGBM 0.688; relative band power no gain (0.659–0.666).
+**This gate was replaced after seeing the result.** That is stated here and in metrics.json (`original_gate`), not hidden.
+**Options:** (1) re-declare the gate as a significance test on the frontal8 model; (2) posterior validation-only preset (scope change,
+still < 80%, validates a montage the score does not use); (3) more debugging (evidence points to data, not code).
+**Decision (owner):** option 1, with metrics fixed before the rerun: per-epoch accuracy + AUC, per-recording accuracy (mean p > 0.5), paired
+within-subject accuracy (out-of-fold mean p(EC) on R02 > R01), a 1000-shuffle within-subject label permutation test on mean fold AUC (full CV
+re-run per shuffle), SHAP top-10. New gate (LightGBM): **permutation p < 0.01 AND AUC > 0.65 AND paired accuracy ≥ 0.75**. No posterior preset.
+**Result:** PASS — p 0.001 (0/1000 null AUC ≥ 0.719; null 0.501 ± 0.017, max 0.561), AUC 0.719, paired 0.886 (39/44).
+Alpha features do **not** lead SHAP (alpha_osc rank 3, after hibeta_abs and samp_entropy).
+**Consequence:** UI/pitch wording: "Validation: features separate eyes-open from eyes-closed well above chance (AUC 0.72, paired 89% of subjects,
+p < 0.01); frontal-only EEG limits per-epoch accuracy." Never quote 80% or "validated accuracy". P6b reports the same metrics on S061–S109.
