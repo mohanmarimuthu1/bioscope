@@ -144,7 +144,13 @@ FLAG_Z = 2.0                              # flag if |score - mean| / std > 2
 
 # --------------------------------------------------------------------------- ML validation
 CV_FOLDS = 5                              # GroupKFold by subject
-CV_ACCURACY_GATE = 0.80                   # LightGBM must reach this or features are suspect
+# ADR-013: the original gate (LightGBM CV accuracy >= 0.80) was set before any evidence; it failed (0.661 ± 0.033,
+# AUC 0.72) and was replaced AFTER seeing that result by the significance gate below (owner decision).
+GATE_PERM_P = 0.01                        # ADR-013: within-subject label permutation p-value for per-epoch AUC
+GATE_AUC = 0.65                           # ADR-013: mean subject-held-out per-epoch ROC-AUC must exceed this
+GATE_PAIRED_ACC = 0.75                    # ADR-013: share of subjects with mean p(EC) on R02 > R01 (out-of-fold)
+N_PERMUTATIONS = 1000                     # ADR-013: permutations for the gate's p-value (min p = 1/1001)
+SHAP_TOP_N = 10                           # ADR-013: features reported by mean |SHAP|
 ML_PRESET = "frontal8"                    # design choice: the demo/UI preset; muse4 ML is stretch
 ML_LABELS = {"eyes_open": 0, "eyes_closed": 1}   # R01 -> 0, R02 -> 1 (CLAUDE.md §7.8)
 LGBM_PARAMS = {                           # design choice: fixed before CV, never tuned on CV folds
