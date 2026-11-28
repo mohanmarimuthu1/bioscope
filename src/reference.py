@@ -95,6 +95,11 @@ def _read(path: str) -> dict:
     return json.loads(Path(path).read_text(encoding="utf-8"))
 
 
+def reference_n(condition: str, preset: str) -> int:
+    """Number of recordings in one preset × condition reference cell (for the UI: "reference, n = 40")."""
+    return len(_read(str(config.REFERENCE_PATH))["presets"][preset][condition]["subjects_used"])
+
+
 def load_reference(condition: str, preset: str) -> dict:
     """Return {feature: entry} for one preset × condition. Raises ValueError if unknown."""
     path = config.REFERENCE_PATH

@@ -24,7 +24,7 @@ from src import config, db, features, io_utils, longitudinal, preprocess, scorin
 PRESET = "frontal8"
 CONDITION = "eyes_open"
 BOUNDARY = ("BAD boundary", "EDGE boundary")
-DEMO_LABEL = "Sequential rest blocks from a single visit — demonstrates tracker mechanics, not multi-day change."
+DEMO_LABEL = config.DEMO_LABEL          # single source in config (P7)
 
 
 def _t0_session(run: str, subject: str = config.DEMO_LONGITUDINAL_SUBJECT) -> mne.io.Raw:

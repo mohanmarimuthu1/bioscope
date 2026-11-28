@@ -36,6 +36,7 @@ for _s in (DEMO_SUBJECT, DEMO_LONGITUDINAL_SUBJECT):
         raise ValueError(f"Demo subject {_s} overlaps the reference or holdout set")
 DEMO_RUNS = [f"R{i:02d}" for i in range(1, 15)]            # R01–R14
 DEMO_REST_LABEL = "T0"                    # source: dataset annotations (rest blocks)
+DEMO_LABEL = "Sequential rest blocks from a single visit — demonstrates tracker mechanics, not multi-day change."  # CLAUDE.md §7.7 UI label
 CONDITIONS = ("eyes_open", "eyes_closed")
 
 # --------------------------------------------------------------------------- channel presets
@@ -68,6 +69,7 @@ ICA_EOG_THRESHOLD = 0.7                   # ADR-005: |r| with the EOG proxies; a
 RANDOM_STATE = 42                         # fixed seed everywhere (CLAUDE.md §13)
 EPOCH_LENGTH_S = 4.0                      # design choice: 4 s windows
 EPOCH_OVERLAP_S = 2.0                     # 50% overlap
+MIN_DURATION_S = EPOCH_LENGTH_S           # shorter than one epoch → friendly "file too short" error (P7)
 REJECT_PTP_V = 200e-6                     # 200 µV peak-to-peak, in volts (ADR-005; was 150 µV)
 MIN_RETAINED_FRAC = 0.5                   # below this: warn + lower confidence
 MIN_EPOCHS = 6                            # below this: warn + lower confidence
