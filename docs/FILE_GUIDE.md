@@ -314,3 +314,16 @@ every metric and CI in range, permutation p ≥ 1/(n+1).
 
 ## src/config.py — update (P6b)
 HOLDOUT_PATH, HOLDOUT_FEATURES_PATH, N_BOOTSTRAP = 1000 (0e3a557).
+
+## scripts/report_classification.py
+**Purpose:** report-only classification detail for the validation model: confusion matrices at 0.5 (per epoch and per recording),
+precision/recall/specificity/F1/balanced accuracy, log-loss and Brier (+ chance baselines), 5-bin calibration, confusion-matrix figure.
+**Inputs → outputs:** raw EDFs S001–S050 (re-extracted at full precision) + saved models + S061–S109 → metrics.json["cv_extra"],
+holdout.json["extra"], docs/figures/confusion_matrix.png (2 × 2: CV/holdout × LightGBM/LR).
+**Algorithm:** recompute out-of-fold predictions with train_sanity_model.cross_validate (same folds, same params) and assert they reproduce
+the stored fold metrics → holdout per-epoch features via evaluate_holdout._one → metrics per model and dataset → figure.
+**Why full precision:** the committed epoch_features.csv is rounded to 6 dp, which moves LightGBM split points (fold 1 accuracy 0.667 → 0.661).
+**Connects to:** train_sanity_model, evaluate_holdout, ml_sanity.load_model; figure shown on the Methodology page (P7).
+| Date | Commit | Change | Effect on numbers |
+|---|---|---|---|
+| 2026-11-28 | 78d4c05 | Created | none (report only) |

@@ -147,3 +147,9 @@ Tried to break: count identities and CI ordering; skips cleanly without holdout.
 
 ## P6b phase PR review (618efe7..7eb0aa3) — 2026-11-28 — PASS
 Diff: config paths, evaluate_holdout.py, holdout artefacts, tests. No refit (the script never calls fit). No contract change. Author: owner only.
+
+## scripts/report_classification.py — 2026-11-28 — FIXED → PASS
+Tried to break: reproduce the stored CV from the committed CSV → fold 1 LightGBM acc 0.661 vs stored 0.667 (rounded features) → the script
+now re-extracts from raw and asserts |diff| ≤ 1e-3 on every fold accuracy/AUC; holdout epoch count must equal holdout.json (2019).
+Checked: TN+FP+FN+TP = 2206 (CV) / 2019 (holdout); per-recording n 93 / 89; empty calibration bins handled (none occurred).
+Remaining: report only — LightGBM overconfidence is documented, not corrected.

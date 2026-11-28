@@ -354,3 +354,36 @@ Files: src/config.py, scripts/evaluate_holdout.py, tests/test_holdout.py, models
 Went well: the external test reproduced the CV picture (AUC 0.72 → 0.68, paired 0.89 → 0.83, p 0.001), with zero crashes on 98 unseen files.
 Broke: nothing; one honest caveat (AUC CI touches 0.63) and one product finding (EC-vs-EO composite only ~1.3 lower) to state in the pitch.
 Next: P7 UI — ADR-013 wording, Methodology page reads metrics.json + holdout.json.
+
+### 2026-11-28 10:30 — Classification detail: confusion matrices, calibration, log-loss (report only)
+Type: analysis
+Command: python scripts/report_classification.py --workers 14
+No retraining, no tuning. CV = out-of-fold predictions recomputed with the same folds/params from full-precision features (the committed
+epoch_features.csv is rounded to 6 dp; reading it shifted fold 1 LightGBM accuracy 0.667 → 0.661, so the script re-extracts from the raw EDFs
+and asserts every stored fold accuracy/AUC is reproduced). Holdout = saved models on S061–S109. EO = negative, EC = positive, threshold 0.5.
+| Set · model · level | TN | FP | FN | TP | Precision | Recall | Specificity | F1 | Bal. acc |
+|---|---|---|---|---|---|---|---|---|---|
+| CV · LightGBM · epoch | 650 | 373 | 374 | 809 | 0.684 | 0.684 | 0.635 | 0.684 | 0.660 |
+| CV · LightGBM · recording | 30 | 14 | 14 | 35 | 0.714 | 0.714 | 0.682 | 0.714 | 0.698 |
+| CV · LR · epoch | 667 | 356 | 370 | 813 | 0.695 | 0.687 | 0.652 | 0.691 | 0.670 |
+| CV · LR · recording | 29 | 15 | 13 | 36 | 0.706 | 0.735 | 0.659 | 0.720 | 0.697 |
+| Holdout · LightGBM · epoch | 579 | 317 | 409 | 714 | 0.693 | 0.636 | 0.646 | 0.663 | 0.641 |
+| Holdout · LightGBM · recording | 28 | 14 | 15 | 32 | 0.696 | 0.681 | 0.667 | 0.688 | 0.674 |
+| Holdout · LR · epoch | 575 | 321 | 378 | 745 | 0.699 | 0.663 | 0.642 | 0.681 | 0.653 |
+| Holdout · LR · recording | 25 | 17 | 16 | 31 | 0.646 | 0.660 | 0.595 | 0.653 | 0.627 |
+
+| Set · model | Log-loss (chance = class prior) | Brier (chance 0.25; prior-only) |
+|---|---|---|
+| CV · LightGBM | **0.752 (chance 0.691) — worse than chance** | 0.237 (prior 0.249) |
+| CV · LR | 0.633 (chance 0.691) | 0.214 |
+| Holdout · LightGBM | **0.837 (chance 0.687) — worse than chance** | **0.260 — worse than 0.25** |
+| Holdout · LR | 0.655 (chance 0.687) | 0.225 |
+
+Calibration (5 equal bins, mean p → observed EC rate): LightGBM is **overconfident** at both ends — CV 0.08 → 0.30 and 0.93 → 0.77;
+holdout 0.07 → 0.39 and 0.92 → 0.76. LR is close in the middle (CV 0.50 → 0.50, 0.69 → 0.68) and mildly overconfident at the extremes
+(CV 0.11 → 0.23, 0.89 → 0.82). Errors are balanced (FP ≈ FN in CV), so no class is systematically missed.
+**Finding:** LightGBM ranks well (AUC 0.72/0.68, permutation p 0.001) but its probabilities should not be read literally: its log-loss is
+worse than predicting the class prior. Not fixed here (report only). Implication for the UI: show p_eyes_closed as a ranking/direction with
+SHAP, not as a calibrated probability; LR has better probability quality. Figure: docs/figures/confusion_matrix.png.
+Effect on calculations: none.
+Files: scripts/report_classification.py, models/metrics.json (cv_extra), models/holdout.json (extra), docs/figures/confusion_matrix.png

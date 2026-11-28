@@ -99,6 +99,13 @@ other than eyes-open differs from eyes-closed within one subject. (3) An explora
 this data has a ceiling. Within each subject the model ranks the eyes-closed run above the eyes-open run for 89% (39/44), and a 1000-shuffle
 permutation test gives p = 0.001. We set an 80% target before seeing data, missed it, and say so (ADR-013).
 
+**Q: Show me the confusion matrix.**
+A: Per 4 s epoch, threshold 0.5, eyes-closed = positive (figure: docs/figures/confusion_matrix.png). Cross-validation, LightGBM: TN 650,
+FP 373, FN 374, TP 809 — precision 0.68, recall 0.68, specificity 0.64, balanced accuracy 0.66. Holdout (49 unseen subjects): TN 579, FP 317,
+FN 409, TP 714 — balanced accuracy 0.64; LR 0.65. Errors are balanced between the classes, so neither condition is systematically missed.
+Honest caveat: LightGBM's probabilities are overconfident (log-loss 0.84 on the holdout vs 0.69 for predicting the class prior), so we use it
+for ranking and SHAP explanation, not as a calibrated probability; the logistic baseline is better calibrated (log-loss 0.66).
+
 **Q: Why use ML if it doesn't decide the score?**
 A: To test the features. If epoch-level features separate eyes-open from eyes-closed on subjects the model never saw, the pipeline carries
 real physiological signal. The score stays transparent (z vs reference); the model is a check, shown with SHAP.
